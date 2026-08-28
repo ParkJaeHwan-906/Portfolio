@@ -2067,9 +2067,9 @@
 
     <div class="stats">
       <div class="stat vfhero">
-        <span class="lbl">LLM 전처리 비용 <span class="pv c">환산</span></span>
+        <span class="lbl">LLM 전처리 대상 <span class="pv m">실측</span></span>
         <span class="val">39.5<span class="u">%↓</span></span>
-        <span class="note">$121 → $74<br>패턴 검열이 39.5% 사전 제거</span>
+        <span class="note">하루 수집 1,671건 → 1,011건<br>패턴 검열로 660건 사전 제거</span>
       </div>
       <div class="stat vfhero">
         <span class="lbl">모델 호출 일 비용 <span class="pv m">실측</span></span>
@@ -3191,7 +3191,7 @@
       <div class="stat">
         <span class="lbl">표본 패턴 통과율 <span class="pv m">실측</span></span>
         <span class="val">60.5<span class="u">%</span></span>
-        <span class="note">하루치 557건 중<br>통과 337 · 폐기 220</span>
+        <span class="note">표본 557건 중<br>통과 337 · 폐기 220</span>
       </div>
       <div class="stat">
         <span class="lbl">빈 본문 구제 <span class="pv m">실측</span></span>
@@ -4296,7 +4296,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--parchment tile--tight">
   <div class="wrap">
     <p class="caption" style="max-width:78ch;margin:0">
-      기록 기준 2026-08-08 · dev 환경(victoryfairy-dev) · ap-northeast-2 — 정제 비용은 하루치 표본 557건
+      기록 기준 2026-08-08 · dev 환경(victoryfairy-dev) · ap-northeast-2 — 정제 비용은 표본 557건(하루 수집량의 약 1/3)
       실측을 누적 57,969건으로 환산했고, 호출 단가는 게시글 7건 묶음(운영값) 실측입니다. 설계값은 Terraform 변수와
       k8s 매니페스트의 현재 값이며, 측정하지 않은 값은 성과로 적지 않았습니다.
     </p>
