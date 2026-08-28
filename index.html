@@ -179,7 +179,7 @@
   .row .v{color:var(--ink); flex:1;}
   .list{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;}
   .list li{display:flex; gap:12px; font-size:15px; line-height:1.45; color:var(--ink);}
-  .list .date{color:var(--body-muted); flex:0 0 92px; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+  .list .date{color:var(--body-muted); flex:0 0 122px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap;}
   .badge{display:inline-block; font-size:12px; color:var(--primary); border:1px solid color-mix(in srgb,var(--primary) 35%,transparent); border-radius:9999px; padding:2px 9px; margin-right:6px;}
 
   /* ---------- Skills ---------- */
@@ -1839,11 +1839,11 @@
       <div class="card">
         <h3>Education / Experience</h3>
         <ul class="list">
-          <li><span class="date">25.12–26.01</span><span>(주)넥스트그라운드 · 프리랜서</span></li>
-          <li><span class="date">2026–</span><span>AI·SW마에스트로 · 과기정통부 · IITP</span></li>
-          <li><span class="date">25.01–25.12</span><span>삼성 청년 SW·AI 아카데미 13기</span></li>
-          <li><span class="date">23.06–24.12</span><span>(주)다다익스 · 인턴</span></li>
-          <li><span class="date">19.03–25.02</span><span>청운대학교 컴퓨터공학과 졸업 · 4.0/4.5</span></li>
+          <li><span class="date">2026.04–2026.11</span><span>AI·SW마에스트로 · 과기정통부 · IITP</span></li>
+          <li><span class="date">2025.12–2026.01</span><span>(주)넥스트그라운드 · 프리랜서</span></li>
+          <li><span class="date">2025.01–2025.12</span><span>삼성 청년 SW·AI 아카데미 13기</span></li>
+          <li><span class="date">2023.06–2024.12</span><span>(주)다다익스 · 인턴</span></li>
+          <li><span class="date">2019.03–2025.02</span><span>청운대학교 컴퓨터공학과 졸업 · 4.0/4.5</span></li>
         </ul>
       </div>
       <div class="card">
@@ -1859,7 +1859,8 @@
       <div class="card">
         <h3>Certificates</h3>
         <ul class="list">
-          <li><span class="date">2026.02</span><span>PCCP Lv.4 · (주)그랩</span></li>
+          <li><span class="date">2026.08</span><span>ADsP · 한국데이터산업진흥원</span></li>
+          <li><span class="date">2026.02</span><span>PCCP Lv.4 · (주)그렙</span></li>
           <li><span class="date">2025.07</span><span>TOEIC Speaking (IH) · YBM</span></li>
           <li><span class="date">2025.02</span><span>삼성 SW 역량평가 모의 A형</span></li>
           <li><span class="date">2024.09</span><span>SQL Developer · 한국데이터산업진흥원</span></li>
@@ -2032,7 +2033,7 @@
         <h5>비용 상한을 전제로 한 정제</h5>
         <p>전량 LLM 투입 구조를 패턴 검열 1차 → Bedrock 2차 캐스케이드로 바꾸고, 회피 표기를
           다중 뷰로 정면 대응했습니다.</p>
-        <span class="rmetric">전처리 비용 39.5%↓ · 호출 일 비용 80%↓</span>
+        <span class="rmetric">전처리 비용 39.5%↓ · 호출 일 비용 85%↓</span>
       </div>
       <div class="role">
         <span class="rk">④ 개발 하네스</span>
@@ -2072,8 +2073,8 @@
       </div>
       <div class="stat vfhero">
         <span class="lbl">모델 호출 일 비용 <span class="pv m">실측</span></span>
-        <span class="val">80<span class="u">%↓</span></span>
-        <span class="note">$44.8 → $8.97<br>1건 호출 → 묶음 호출</span>
+        <span class="val">85<span class="u">%↓</span></span>
+        <span class="note">$44.8 → $6.8<br>1건 호출 → 7건 묶음 호출</span>
       </div>
       <div class="stat">
         <span class="lbl">스케일 아웃 시 채팅 코드 변경 <span class="pv s">설계값</span></span>
@@ -2509,7 +2510,7 @@
           </tr>
           <tr>
             <td>수집·정제</td><td>모델 호출 일 비용</td>
-            <td class="mono">$44.8 → $8.97</td>
+            <td class="mono">$44.8 → $6.8</td>
             <td><span class="pv m">실측</span> 프롬프트 2,470토큰 반복분 흡수</td>
           </tr>
           <tr>
@@ -3184,8 +3185,8 @@
       </div>
       <div class="stat vfhero">
         <span class="lbl">모델 호출 일 비용 <span class="pv m">실측</span></span>
-        <span class="val">80<span class="u">%↓</span></span>
-        <span class="note">$44.8 → $8.97<br>예산 상한 $30/일 안으로</span>
+        <span class="val">85<span class="u">%↓</span></span>
+        <span class="note">$44.8 → $6.8<br>예산 상한 $30/일 안으로</span>
       </div>
       <div class="stat">
         <span class="lbl">표본 패턴 통과율 <span class="pv m">실측</span></span>
@@ -3480,16 +3481,16 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         </thead>
         <tbody>
           <tr><td class="mono">게시글 1건</td><td class="mono">$44.8</td><td><span class="chip no">초과</span></td></tr>
-          <tr><td class="mono">게시글 5건 묶음</td><td class="mono">$8.97</td><td><span class="chip ok">상한의 30%</span></td></tr>
+          <tr><td class="mono">게시글 7건 묶음 <span class="pv m">운영값</span></td><td class="mono">$6.8</td><td><span class="chip ok">상한의 23%</span></td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="col">
       <div class="warnbox">
-                <p><strong>위 비용은 5건 묶음 기준이고 현재 운영값은 <code>batch_size = 7</code>입니다.</strong>
-          7에서 재측정하지 않았으므로 $8.97을 7의 값으로 적지 않습니다. 방향은 추가 절감이지만
-          측정하지 않은 수치는 성과가 아닙니다.</p>
+                <p><strong>위 비용은 현재 운영값 <code>batch_size = 7</code> 기준입니다.</strong>
+          호출 단가는 배치 크기에 따라 달라지므로, 이 수치를 인용할 때는 <strong>7건 묶음 기준</strong>임을
+          함께 밝힙니다.</p>
       </div>
 
             <p><strong>비용이 드는 단계를 맨 뒤에 두는 것</strong>이 요지입니다. 순서를 뒤집으면 같은 장치가 무의미해집니다. 예산 상한 $30/일을 설계 제약으로 먼저 두고 구조를 역산한 결과입니다.
@@ -4232,7 +4233,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <p>전송을 POST 로 따로 두어 연결 상태 관리 부담을 줄였습니다. 파드가 여러 대인 환경은 Redis pub/sub 으로 해결했고, 하트비트 주기는 엣지 타임아웃과 함께 관리합니다.</p>
       </div>
       <div class="dec">
-        <span class="tag">얻은 것 — 전처리 비용 39.5%↓ · 일 비용 80%↓</span>
+        <span class="tag">얻은 것 — 전처리 비용 39.5%↓ · 일 비용 85%↓</span>
         <h5>전량 LLM 투입 대신 패턴 검열을 앞에 둔 2단 캐스케이드</h5>
         <p>예산 상한 $30/일을 설계 제약으로 먼저 두고 구조를 역산했습니다. 규칙 사전과 6개 뷰 매칭은 그 제약을 만족시키기 위해 필요한 구성입니다.</p>
       </div>
@@ -4296,7 +4297,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <div class="wrap">
     <p class="caption" style="max-width:78ch;margin:0">
       기록 기준 2026-08-08 · dev 환경(victoryfairy-dev) · ap-northeast-2 — 정제 비용은 하루치 표본 557건
-      실측을 누적 57,969건으로 환산했고, 호출 단가는 게시글 5건 묶음 실측입니다. 설계값은 Terraform 변수와
+      실측을 누적 57,969건으로 환산했고, 호출 단가는 게시글 7건 묶음(운영값) 실측입니다. 설계값은 Terraform 변수와
       k8s 매니페스트의 현재 값이며, 측정하지 않은 값은 성과로 적지 않았습니다.
     </p>
   </div>
