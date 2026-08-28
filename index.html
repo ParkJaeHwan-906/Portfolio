@@ -2067,7 +2067,7 @@
 
     <div class="stats">
       <div class="stat vfhero">
-        <span class="lbl">LLM 전처리 대상 <span class="pv m">실측</span></span>
+        <span class="lbl">LLM 전처리 대상 <span class="pv c">환산</span></span>
         <span class="val">39.5<span class="u">%↓</span></span>
         <span class="note">하루 수집 1,671건 → 1,011건<br>패턴 검열로 660건 사전 제거</span>
       </div>
@@ -2504,9 +2504,9 @@
             <td><span class="pv m">실측</span> 표본 557건 통과율 60.5%</td>
           </tr>
           <tr>
-            <td>수집·정제</td><td>전처리 비용</td>
-            <td class="mono">$121 → $74</td>
-            <td><span class="pv c">환산</span> 누적 57,969건 기준</td>
+            <td>수집·정제</td><td>LLM 전처리 대상 (하루)</td>
+            <td class="mono">1,671건 → 1,011건</td>
+            <td><span class="pv c">환산</span> 표본 557건(하루의 1/3) 통과율 60.5% 적용</td>
           </tr>
           <tr>
             <td>수집·정제</td><td>모델 호출 일 비용</td>
@@ -3460,13 +3460,13 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     <div class="tw">
       <table>
         <caption>① 패턴 검열 — 표본 557건의 통과율 60.5%를 누적 데이터에 환산했습니다.
-          단가 근거: 게시글당 검열 단위 1.4개 × 단위당 $0.0015 ≒ 게시글당 $0.0021.</caption>
+          하루 수집 약 1,671건 기준으로는 <strong>1,011건만 모델로 넘어갑니다.</strong></caption>
         <thead>
-          <tr><th>구분</th><th class="mono">LLM 판정 대상</th><th class="mono">비용</th><th>차이</th></tr>
+          <tr><th>구분</th><th class="mono">LLM 판정 대상</th><th>차이</th></tr>
         </thead>
         <tbody>
-          <tr><td>패턴 검열 <strong>미적용</strong></td><td class="mono">57,969건 (100%)</td><td class="mono">약 $121</td><td>—</td></tr>
-          <tr><td>패턴 검열 <strong>적용</strong></td><td class="mono">35,071건 (60.5%)</td><td class="mono">약 $74</td><td><span class="chip ok">약 $48 절감 · 39.5%↓</span></td></tr>
+          <tr><td>패턴 검열 <strong>미적용</strong></td><td class="mono">57,969건 (100%)</td><td>—</td></tr>
+          <tr><td>패턴 검열 <strong>적용</strong></td><td class="mono">35,071건 (60.5%)</td><td><span class="chip ok">22,898건 사전 제거 · 39.5%↓</span></td></tr>
         </tbody>
       </table>
     </div>
