@@ -1334,6 +1334,22 @@
   }
 
   .vf .demo-bar button.ghost:hover { background: var(--pearl); }
+  /* 익명 요청 제한 시연 */
+  .vf #lim-root .lim-key { font-family: var(--code, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; color: var(--body-muted); word-break: break-all; margin: 0 0 16px; }
+  .vf #lim-root .lim-count { font-size: 48px; font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); margin: 0 0 8px; }
+  .vf #lim-root .lim-count small { font-size: 16px; font-weight: 500; color: var(--body-muted); margin-left: 8px; letter-spacing: 0; }
+  .vf #lim-root .lim-ttl { font-size: 14px; color: var(--body-muted); margin: 0 0 20px; line-height: 1.5; }
+  .vf #lim-root .lim-slots { display: flex; gap: 6px; flex-wrap: wrap; }
+  .vf #lim-root .lim-slots span { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--hairline); background: var(--canvas); transition: background var(--t, .2s) ease-out; }
+  .vf #lim-root .lim-slots span.f { background: var(--ink); border-color: var(--ink); }
+  .vf #lim-root.over .lim-slots span.f { background: var(--primary); border-color: var(--primary); }
+  .vf #lim-root .lim-log { list-style: none; margin: 0; padding: 0; font-size: 14px; line-height: 1.55; }
+  .vf #lim-root .lim-log li { display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--divider); }
+  .vf #lim-root .lim-log li:last-child { border-bottom: none; }
+  .vf #lim-root .lim-log li.empty { display: block; color: var(--body-muted); }
+  .vf #lim-root .lim-log .c { font-family: var(--code, ui-monospace, SFMono-Regular, Menlo, monospace); font-weight: 600; color: var(--ink); }
+  .vf #lim-root .lim-log .c.bad { color: var(--primary); }
+  .vf #lim-root .lim-log .c.dim { color: var(--body-muted); font-weight: 500; }
 
   /* 시나리오에 맞는 단계 설명만 남긴다. display:none 이라 번호도 건너뛴다 */
   .vf #dep-root:not(.fail) .stagelog li[data-var="bad"], .vf #dep-root.fail .stagelog li[data-var="ok"] { display: none; }
@@ -1479,19 +1495,20 @@
     margin-bottom:56px;
   }
   .vf .tabbar{
-    gap:2px; padding:10px 22px; justify-content:flex-start;
+    gap:2px; padding:10px 12px; justify-content:flex-start;
     max-width:var(--maxw); margin:0 auto;
   }
+  /* 탭이 열 개라 14px·16px 패딩이면 1120px 컨테이너를 넘쳐 마지막 탭이 숨는다 */
   .vf .tabbar button{
     font-family:var(--ui);
-    font-size:14px; font-weight:500; letter-spacing:-.016em;
-    border-radius:9999px; padding:9px 16px; min-height:0;
+    font-size:13.5px; font-weight:500; letter-spacing:-.016em;
+    border-radius:9999px; padding:9px 10px; min-height:0;
     color:var(--body-muted); background:transparent;
     transition:background var(--t) ease,color var(--t) ease;
   }
   .vf .tabbar button .n{
     font-size:11px; font-weight:600; letter-spacing:.06em;
-    margin-right:7px; color:var(--body-muted);
+    margin-right:5px; color:var(--body-muted);
   }
   .vf .tabbar button:hover{background:var(--chip); color:var(--ink);}
   .vf .tabbar button[aria-selected="true"]{
@@ -1978,7 +1995,7 @@
 <section class="tile tile--light tile--tight" id="vf-deep">
   <div class="wrap">
     <p class="sectlabel">Architecture</p>
-    <h3 class="display-md">담당 범위를 아홉 갈래로 나눠 기록했습니다</h3>
+    <h3 class="display-md">담당 범위를 열 갈래로 나눠 기록했습니다</h3>
     <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">요청 경로부터 배포와 개발 하네스까지, 직접 설계·구현한 부분만 다이어그램과 실측치로 정리했습니다.</p>
   </div>
 </section>
@@ -1994,7 +2011,8 @@
       <button role="tab" id="t-data" aria-controls="p-data" aria-selected="false" tabindex="-1"><span class="n">05</span>데이터 계층</button>
       <button role="tab" id="t-deploy" aria-controls="p-deploy" aria-selected="false" tabindex="-1"><span class="n">06</span>배포</button>
       <button role="tab" id="t-harness" aria-controls="p-harness" aria-selected="false" tabindex="-1"><span class="n">07</span>개발 하네스</button>
-      <button role="tab" id="t-decisions" aria-controls="p-decisions" aria-selected="false" tabindex="-1"><span class="n">08</span>설계 결정</button>
+      <button role="tab" id="t-limit" aria-controls="p-limit" aria-selected="false" tabindex="-1"><span class="n">08</span>익명 요청 제한</button>
+      <button role="tab" id="t-decisions" aria-controls="p-decisions" aria-selected="false" tabindex="-1"><span class="n">09</span>설계 결정</button>
     </div>
   </div>
 
@@ -2458,6 +2476,12 @@
         <span class="k">② 실시간</span>
         <span class="ttl">실시간 채팅</span>
         <span class="d">전송은 POST, 수신은 SSE. 파드가 달라도 Redis가 잇습니다.</span>
+        <span class="go">자세히 →</span>
+      </button>
+      <button type="button" data-goto="t-limit">
+        <span class="k">② 백엔드</span>
+        <span class="ttl">익명 요청 제한</span>
+        <span class="d">인증 없는 유일한 쓰기 경로에 식별자별 30분·10회 고정 창을 둡니다.</span>
         <span class="go">자세히 →</span>
       </button>
       <button type="button" data-goto="t-pipeline">
@@ -4206,6 +4230,161 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   </div>
 
   <!-- ══════════════════ 08 결정 ══════════════════ -->
+  <!-- ══════════════════ 08 익명 요청 제한 ══════════════════ -->
+  <div role="tabpanel" id="p-limit" aria-labelledby="t-limit" tabindex="0" hidden>
+    <div class="panel-head">
+      <h2>익명 요청 제한</h2>
+      <p class="sub">가입 전 프로필 업로드 · 식별자별 고정 창 · 저장 실패분만 환불</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat vfhero">
+        <span class="lbl">인증 없이 쓰기가 되는 경로 <span class="pv s">설계값</span></span>
+        <span class="val">1<span class="u">개</span></span>
+        <span class="note">가입 전 프로필 이미지 업로드<br>이 경로에만 앱 계층 한도를 둡니다</span>
+      </div>
+      <div class="stat">
+        <span class="lbl">창 길이 <span class="pv s">설계값</span></span>
+        <span class="val">30<span class="u">분</span></span>
+        <span class="note">키 생성 때 한 번만 TTL<br>증가로 갱신하지 않는 고정 창</span>
+      </div>
+      <div class="stat">
+        <span class="lbl">창당 허용 <span class="pv s">설계값</span></span>
+        <span class="val">10<span class="u">회</span></span>
+        <span class="note">11번째부터 429<br>거절된 요청은 객체를 만들지 않습니다</span>
+      </div>
+      <div class="stat">
+        <span class="lbl">미가입 임시 객체 보존 <span class="pv s">설계값</span></span>
+        <span class="val">24<span class="u">시간</span></span>
+        <span class="note">가입으로 이어지지 않은 temp/ 객체<br>정리 회차가 지웁니다</span>
+      </div>
+    </div>
+
+    <div class="col">
+      <p class="lede">가입 화면에서 사진을 고르는 순간에는 <strong>인증할 주체가 없습니다.</strong>
+        백엔드에서 토큰 없이 쓰기가 되는 유일한 경로라, 지켜야 할 것은 이미지가 아니라
+        <strong>열린 창구 자체</strong>였습니다. 아래에서 직접 눌러 한도가 어떻게 닫히고 열리는지
+        확인할 수 있습니다.</p>
+    </div>
+
+    <h4 class="sec">왜 이 경로에만 한도를 두는가</h4>
+
+    <div class="col">
+      <p>계정이 없으니 토큰도 없습니다. 그래서 이 엔드포인트는 <code>/auth/**</code> 아래에 두어 인증 없이
+        열었고, 대신 <strong>DB 행은 하나도 만들지 않습니다.</strong> 남는 것은 S3 의 <code>temp/</code>
+        객체와 Redis 카운터뿐입니다. 유효한 access 토큰이 함께 와도 동작이 달라지지 않습니다. 저장 위치는
+        언제나 <code>temp/</code> 이고 계정 컬럼은 갱신되지 않습니다.</p>
+      <p>인증이 없는 쓰기 경로는 곧 <strong>누구나 S3 에 객체를 만들 수 있는 경로</strong>입니다. 클라이언트가
+        발급한 <code>appId</code> 를 키로 Redis 카운터를 두고, 한 창 안에서 10회까지 허용하고 11번째를
+        <code>429</code> 로 거절합니다. 사진을 바꿔 보는 정상 사용자에게는 충분하고, 같은 식별자로 반복
+        호출하는 스크립트는 여기서 멈춥니다.</p>
+    </div>
+
+    <h4 class="sec">한도 판정 시연</h4>
+
+    <div class="col">
+      <p>아래는 <strong>판정 순서와 Redis 키의 상태 변화를 브라우저에서 돌 수 있게 옮긴 것</strong>입니다.
+        업로드를 반복해 11번째가 거절되는 것, S3 실패가 슬롯을 태우지 않는 것, 30분이 지나야 창이
+        다시 열리는 것을 순서대로 눌러 보십시오.</p>
+    </div>
+
+    <div class="demo" id="lim-root">
+      <div class="demo-bar">
+        <label>요청</label>
+        <button type="button" id="lim-up">업로드</button>
+        <button type="button" id="lim-s3" class="ghost">S3 실패로 업로드</button>
+        <button type="button" id="lim-tick" class="ghost">30분 경과</button>
+        <button type="button" id="lim-new" class="ghost">새 appId</button>
+      </div>
+      <div class="demo-grid">
+        <div class="demo-pane">
+          <h5>Redis 카운터</h5>
+          <p class="lim-key" id="lim-key">profile:image:temp:count:app-7f3a</p>
+          <p class="lim-count"><span id="lim-count">—</span><small>/ 10</small></p>
+          <p class="lim-ttl" id="lim-ttl">키 없음 · 첫 요청이 창을 엽니다</p>
+          <div class="lim-slots" id="lim-slots" aria-label="이번 창에서 소모한 슬롯"></div>
+        </div>
+        <div class="demo-pane">
+          <h5>요청 로그 <span id="lim-progress">0건</span></h5>
+          <ol class="lim-log" id="lim-log" aria-live="polite">
+            <li class="empty">아직 요청이 없습니다.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <p class="warnbox" style="margin-top:22px">
+        <strong>이 시연의 범위.</strong> 판정 순서, 고정 창, 환불 규칙은 운영 로직과 같지만 시간은 버튼으로
+        흘립니다. 운영에서는 Redis 의 <code>INCR</code> 반환값과 키 TTL 이 이 상태를 들고 있고, 앱은 판정만
+        합니다.
+      </p>
+    </div>
+
+    <h4 class="sec">판정 순서가 계약입니다</h4>
+
+    <div class="col">
+      <p>식별자 확인 → 이미지 검증 → 카운터 증가 → 저장. 이 순서에서 <strong>어느 단계가 어느 단계보다
+        앞인지</strong>가 각각 하나의 결정입니다.</p>
+      <ul class="plain">
+        <li><strong>판정은 증가 결과로 합니다.</strong> "지금 몇 회인지" 읽고 나서 더하면 동시 요청 둘이
+          각각 9회를 읽고 나란히 통과합니다. <code>INCR</code> 의 반환값으로 판정해 게이트를 원자적으로
+          잡았습니다.</li>
+        <li><strong>창은 고정입니다.</strong> TTL 은 키가 새로 생길 때 한 번만 겁니다. 증가할 때마다
+          갱신하면 30분 안에 계속 올리는 사용자는 창이 끝나지 않아 영영 갇힙니다.</li>
+        <li><strong>검증이 증가보다 앞입니다.</strong> 형식·크기 위반으로 400 을 받은 요청은 한도를
+          소모하지 않습니다.</li>
+        <li><strong>증가가 저장보다 앞입니다.</strong> 한도를 넘긴 요청은 S3 객체를 만들지 않고
+          거절됩니다. Redis 가 죽어 증가에 실패해도 객체는 생기지 않습니다(fail-closed).</li>
+      </ul>
+    </div>
+
+    <div class="tw">
+      <table>
+        <caption>어느 단계에서 실패하느냐에 따라 한도 소모 여부가 갈립니다.</caption>
+        <thead>
+          <tr><th>단계</th><th>실패 시 응답</th><th>한도 소모</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>식별자 확인</td><td class="mono">400</td><td>없음</td></tr>
+          <tr><td>이미지 형식·크기 검증</td><td class="mono">400</td><td>없음</td></tr>
+          <tr><td>카운터 증가 · 판정</td><td class="mono">429</td><td>소모 (환불 없음)</td></tr>
+          <tr><td>S3 저장</td><td class="mono">5xx</td><td>소모 후 환불</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="sec">환불: 저장 실패분만 되돌립니다</h4>
+
+    <div class="col">
+      <p>증가가 저장보다 앞이면 S3 장애가 정상 사용자의 슬롯을 태웁니다. 저장 실패 10회가 한 식별자의
+        한도를 조용히 소모하는 것이 실측됐습니다. 순서를 "저장 성공 후 증가"로 바꾸면 판정과 증가
+        사이에 창이 생겨 동시성 방어가 무너지므로, 순서는 그대로 두고 <strong>실패한 회차만
+        환불</strong>했습니다. 한도 초과 거절은 환불하지 않습니다. 이미 넘긴 창의 값이 11, 12 로 늘어도
+        판정은 같고 TTL 도 밀리지 않습니다.</p>
+      <div class="warnbox">
+        <p>환불은 단순 <code>DECR</code> 로 하면 안 됩니다. Redis 의 <code>DECR</code> 는 키가 없으면
+          <code>-1</code> 로 새 키를 만들고, 그 키에는 TTL 이 없습니다. 창이 끝나 키가 사라진 뒤 도착한
+          실패 요청 하나가 영구 키를 남기면 그 식별자는 사실상 무제한이 됩니다. 존재 확인·감소·0 하한을
+          <strong>Lua 스크립트 하나</strong>에 묶어 원자적으로 처리했습니다.</p>
+      </div>
+      <p>환불 자체는 best-effort 입니다. 환불이 실패해도 예외를 올리지 않고 로그만 남깁니다. 여기서 예외를
+        던지면 저장 실패(원인)가 환불 실패(결과)에 가려집니다. 최악의 결과는 그 식별자가 슬롯 하나를 잃는
+        것뿐이고, 창이 30분이라 저절로 회복됩니다.</p>
+    </div>
+
+    <h4 class="sec">이 장치의 한계</h4>
+
+    <div class="col">
+      <p>이 한도는 <strong>남용 방어가 아닙니다.</strong> 식별자를 클라이언트가 발급하므로 새 값을 만들면
+        다시 10회가 열립니다. 정상 사용자의 반복 시도와 단순 스크립트를 앱 계층에서 끊는 것까지가 이
+        장치의 몫이고, 실효 방어는 엣지의 일입니다. 가입까지 이어지지 않은 <code>temp/</code> 객체는
+        24시간이 지나면 정리 회차가 지웁니다. 그 회차는 DB 를 보지 않습니다. 가입은 영구 경로로 옮긴
+        주소만 저장하므로 <code>temp/</code> 에 남은 객체는 언제나 참조가 없습니다.</p>
+    </div>
+
+  </div>
+
   <div role="tabpanel" id="p-decisions" aria-labelledby="t-decisions" tabindex="0" hidden>
     <div class="panel-head">
       <h2>설계 결정</h2>
@@ -4252,63 +4431,6 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <h5>가입 전 프로필 업로드에 식별자별 고정 창 한도</h5>
         <p>계정이 없는 시점의 업로드라 인증할 주체가 없습니다. 30분 창에 10회를 Redis 원자 증가로 세어 11번째를 거절하고, 판정 뒤 저장이 실패한 회차만 Lua 스크립트로 되돌립니다.</p>
       </div>
-    </div>
-
-    <h4 class="sec">익명 요청 제한 — 가입 전 프로필 이미지</h4>
-
-    <div class="col">
-      <p class="lede">가입 화면에서 사진을 고르는 순간에는 <strong>인증할 주체가 없습니다.</strong>
-        백엔드에서 토큰 없이 쓰기가 되는 유일한 경로라, 지켜야 할 것은 이미지가 아니라 열린 창구
-        자체였습니다.</p>
-
-      <h3>한도: 식별자별 30분 창에 10회</h3>
-      <p>클라이언트가 발급한 <code>appId</code> 를 키로 Redis 카운터를 두고, 한 창 안에서 10회까지
-        허용하고 11번째를 <code>429</code> 로 거절합니다. 사진을 바꿔 보는 정상 사용자에게는 충분하고,
-        같은 식별자로 반복 호출하는 스크립트는 여기서 멈춥니다.</p>
-      <ul class="plain">
-        <li><strong>판정은 증가 결과로 합니다.</strong> "지금 몇 회인지" 읽고 나서 더하면 동시 요청 둘이
-          각각 9회를 읽고 나란히 통과합니다. <code>INCR</code> 의 반환값으로 판정해 게이트를 원자적으로
-          잡았습니다.</li>
-        <li><strong>창은 고정입니다.</strong> TTL 은 키가 새로 생길 때 한 번만 겁니다. 증가할 때마다
-          갱신하면 30분 안에 계속 올리는 사용자는 창이 끝나지 않아 영영 갇힙니다.</li>
-        <li><strong>검증이 증가보다 앞입니다.</strong> 형식·크기 위반으로 400 을 받은 요청은 한도를
-          소모하지 않습니다. 반대로 증가는 저장보다 앞이라, 한도를 넘긴 요청은 S3 객체를 만들지 않고
-          거절됩니다. Redis 가 죽어 증가에 실패해도 객체는 생기지 않습니다(fail-closed).</li>
-      </ul>
-
-      <h3>환불: 저장 실패분만 되돌립니다</h3>
-      <p>증가가 저장보다 앞이면 S3 장애가 정상 사용자의 슬롯을 태웁니다. 저장 실패 10회가 한 식별자의
-        한도를 조용히 소모하는 것이 실측됐습니다. 순서를 "저장 성공 후 증가"로 바꾸면 판정과 증가
-        사이에 창이 생겨 동시성 방어가 무너지므로, 순서는 그대로 두고 <strong>실패한 회차만
-        환불</strong>했습니다.</p>
-      <div class="warnbox">
-        <p>환불은 단순 <code>DECR</code> 로 하면 안 됩니다. Redis 의 <code>DECR</code> 는 키가 없으면
-          <code>-1</code> 로 새 키를 만들고, 그 키에는 TTL 이 없습니다. 창이 끝나 키가 사라진 뒤 도착한
-          실패 요청 하나가 영구 키를 남기면 그 식별자는 사실상 무제한이 됩니다. 존재 확인·감소·0 하한을
-          <strong>Lua 스크립트 하나</strong>에 묶어 원자적으로 처리했습니다.</p>
-      </div>
-    </div>
-
-    <div class="tw">
-      <table>
-        <caption>순서가 계약입니다. 어느 단계에서 실패하느냐에 따라 한도 소모 여부가 갈립니다.</caption>
-        <thead>
-          <tr><th>단계</th><th>실패 시 응답</th><th>한도 소모</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>식별자 확인</td><td class="mono">400</td><td>없음</td></tr>
-          <tr><td>이미지 형식·크기 검증</td><td class="mono">400</td><td>없음</td></tr>
-          <tr><td>카운터 증가 · 판정</td><td class="mono">429</td><td>소모 (환불 없음)</td></tr>
-          <tr><td>S3 저장</td><td class="mono">5xx</td><td>소모 후 환불</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="col">
-      <p>이 한도는 <strong>남용 방어가 아닙니다.</strong> 식별자를 클라이언트가 발급하므로 새 값을 만들면
-        다시 10회가 열립니다. 정상 사용자의 반복 시도와 단순 스크립트를 앱 계층에서 끊는 것까지가 이
-        장치의 몫이고, 실효 방어는 엣지의 일입니다. 가입까지 이어지지 않은 <code>temp/</code> 객체는
-        24시간이 지나면 정리 회차가 지웁니다.</p>
     </div>
 
     <h4 class="sec">소유권 경계</h4>
@@ -4358,7 +4480,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--parchment tile--tight">
   <div class="wrap">
     <p class="caption" style="max-width:78ch;margin:0">
-      기록 기준 2026-08-08 · dev 환경(victoryfairy-dev) · ap-northeast-2 — 정제 비용은 표본 557건(하루 수집량의 약 1/3)
+      기록 기준 2026-09-04 · dev 환경(victoryfairy-dev) · ap-northeast-2 — 정제 비용은 표본 557건(하루 수집량의 약 1/3)
       실측을 누적 57,969건으로 환산했고, 호출 단가는 게시글 7건 묶음(운영값) 실측입니다. 설계값은 Terraform 변수와
       k8s 매니페스트의 현재 값이며, 측정하지 않은 값은 성과로 적지 않았습니다.
     </p>
@@ -6242,6 +6364,98 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   })();
 </script>
 
+<script>
+  // ── 익명 요청 제한 시연 ─────────────────────────────────────────────
+  // 운영 판정과 같은 순서를 브라우저 상태로 옮겼다. 시간은 버튼으로 흘린다.
+  //   업로드      : INCR → 판정 → 저장(성공)
+  //   S3 실패     : INCR → 판정 → 저장 실패 → 환불(키가 있을 때만, TTL 유지)
+  //   30분 경과   : 키 만료
+  //   새 appId    : 다른 식별자 — 이 장치의 한계를 그대로 보여준다
+  (function () {
+    const ROOT = document.getElementById('lim-root');
+    if (!ROOT) return;
+    const MAX = 10;
+    const $ = id => ROOT.querySelector('#' + id);
+    const keyEl = $('lim-key'), countEl = $('lim-count'), ttlEl = $('lim-ttl'),
+          slots = $('lim-slots'), log = $('lim-log'), progress = $('lim-progress');
+
+    // count === null 이면 키가 없다. 키가 있으면 0 이상의 정수다.
+    let count = null, n = 0, appId = 'app-7f3a';
+
+    for (let i = 0; i < MAX; i++) slots.appendChild(document.createElement('span'));
+
+    function render() {
+      keyEl.textContent = 'profile:image:temp:count:' + appId;
+      countEl.textContent = count === null ? '—' : String(count);
+      ttlEl.textContent = count === null
+        ? '키 없음 · 첫 요청이 창을 엽니다'
+        : 'TTL 30분 · 증가·환불로 갱신되지 않습니다';
+      const filled = count === null ? 0 : Math.min(count, MAX);
+      [...slots.children].forEach((s, i) => s.classList.toggle('f', i < filled));
+      ROOT.classList.toggle('over', count !== null && count > MAX);
+      progress.textContent = n + '건';
+    }
+
+    function push(code, text, cls) {
+      const empty = log.querySelector('.empty');
+      if (empty) empty.remove();
+      n++;
+      const li = document.createElement('li');
+      const c = document.createElement('span');
+      c.className = 'c' + (cls ? ' ' + cls : '');
+      c.textContent = code;
+      const t = document.createElement('span');
+      t.textContent = text;
+      li.append(c, t);
+      log.prepend(li);
+      while (log.children.length > 8) log.lastElementChild.remove();
+    }
+
+    // INCR 의 반환값으로 판정한다. 읽고 나서 더하지 않는다.
+    function incr() {
+      const created = count === null;
+      count = (count === null ? 0 : count) + 1;
+      return { after: count, created };
+    }
+
+    // 키가 있을 때만 감소하고 0 에서 멈춘다. 키가 없으면 아무것도 하지 않는다.
+    function refund() {
+      if (count === null) return false;
+      if (count > 0) count--;
+      return true;
+    }
+
+    function upload(fail) {
+      const { after, created } = incr();
+      const opened = created ? ' · 키 생성, TTL 30분 시작' : '';
+      if (after > MAX) {
+        push('429', '한도 초과 · 객체를 만들지 않음 · 환불 없음 (카운터 ' + after + ')', 'bad');
+      } else if (fail) {
+        refund();
+        push('5xx', 'S3 저장 실패 → 환불 · 슬롯 ' + count + ' / ' + MAX + ' (TTL 그대로)' + opened, 'dim');
+      } else {
+        push('200', 'temp/ 에 저장 · 슬롯 ' + after + ' / ' + MAX + opened);
+      }
+      render();
+    }
+
+    $('lim-up').addEventListener('click', () => upload(false));
+    $('lim-s3').addEventListener('click', () => upload(true));
+    $('lim-tick').addEventListener('click', () => {
+      if (count === null) { push('—', '키가 없어 지나갈 창도 없습니다', 'dim'); }
+      else { count = null; push('—', '30분 경과 · 키 만료 · 이 appId 에 다시 ' + MAX + '회가 열립니다', 'dim'); }
+      render();
+    });
+    $('lim-new').addEventListener('click', () => {
+      appId = 'app-' + Math.random().toString(16).slice(2, 6);
+      count = null;
+      push('—', '새 식별자 ' + appId + ' · 한도가 다시 열립니다 (클라이언트 발급이라 생기는 한계)', 'dim');
+      render();
+    });
+
+    render();
+  })();
+</script>
 <script>
   // ── 현재 탭의 목차 ──────────────────────────────────────────────────
   // 절(h4.sec)과 소절(h3)을 두 단계로 담는다. 탭이 바뀌면 다시 만든다.
