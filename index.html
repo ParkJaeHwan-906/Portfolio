@@ -4871,7 +4871,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     const prog = ROOT.querySelector('#' + progId);
     const NS = 'http://www.w3.org/2000/svg';
     const still = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const DUR = 1100;   // 점 하나가 한 구간을 지나는 시간 — 눈으로 따라갈 수 있게 느리게
+    const DUR = 650;    // 점 하나가 한 구간을 지나는 시간 — 따라갈 수 있되 늘어지지 않게
     let runId = 0;
     let session = null; // 단계 모드 진행 상태 { steps, items, i, busy, mine }
 
@@ -4957,7 +4957,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         await Promise.all(legs.map(l => animateLeg(l, dur, mine)));
         if (mine !== runId) return false;
         if (!Array.isArray(ph) && ph.after) ph.after();
-        if (dur && legs.length) await wait(160, mine);
+        if (dur && legs.length) await wait(110, mine);
       }
       if (s.after) s.after();
       return mine === runId;
@@ -4985,7 +4985,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         if (S.mine !== runId) return;
         const ok = await runStep(steps[i], i, S.items, S.mine);
         if (!ok) return;
-        if (dur) await wait(steps[i].hold || 900, S.mine);
+        if (dur) await wait(steps[i].hold || 420, S.mine);
       }
       if (S.mine !== runId) return;
       S.i = steps.length;
@@ -5075,7 +5075,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       steps.push({
         st: '큐 완성 — 앞(오른쪽)이 먼저 나갑니다',
         sd: '파란 칸이 맨 앞입니다. Tick 스케줄러는 항상 이 칸에서만 꺼냅니다. 다른 방의 큐와는 완전히 독립이라 한 방이 밀려도 다른 방은 영향이 없습니다',
-        nodes: ['mq-tick'], wires: [], phases: [], hold: 1400,
+        nodes: ['mq-tick'], wires: [], phases: [], hold: 900,
         after() { qact('앞: ' + (q[0] ? q[0].label : '') + ' · 뒤: ' + (q[q.length - 1] ? q[q.length - 1].label : '')); }
       });
       const tickAll = (label, title, sd) => ({
@@ -5122,7 +5122,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         steps.push({
           st: 'retryCount 2 → 비정상 세션 판단, 재시도 중단',
           sd: '같은 세션에 2회 이상 실패하면 비정상 세션으로 보고 더 이상 재시도하지 않습니다. 죽은 세션 하나가 방 전체의 큐를 막지 못하게 하는 장치입니다',
-          nodes: [], wires: [], phases: [], hold: 1400,
+          nodes: [], wires: [], phases: [], hold: 900,
           after() { qact('DRAW 폐기 · 큐에 되돌리지 않음'); status('retryCount 2 · 세션 B 비정상 → 중단', true); }
         });
         steps.push({
@@ -5193,7 +5193,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         {
           st: 'B의 연결이 비정상 종료',
           sd: '네트워크 끊김·탭 종료 등으로 WebSocket이 닫힙니다. B의 화면은 멈춥니다',
-          nodes: [], wires: [], phases: [], hold: 1400,
+          nodes: [], wires: [], phases: [], hold: 900,
           after() { F.on(['rc-b'], 'bad'); F.on(['rc-w1'], 'dim'); wl.textContent = '연결 끊김'; F.msg('rc-mb', '연결 끊김'); F.msg('rc-mb2', ''); }
         },
         {
@@ -5211,7 +5211,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         {
           st: '히스토리 확인 — 빠진 동안의 이벤트를 추림',
           sd: 'B가 없던 사이의 기록을 히스토리에서 확인해 현재 라운드·차례·점수와 함께 복구 데이터를 만듭니다',
-          nodes: ['rc-hist', 'rc-room'], wires: [], phases: [], hold: 1400,
+          nodes: ['rc-hist', 'rc-room'], wires: [], phases: [], hold: 900,
           after() { hs.textContent = 'B 부재 중 이벤트만 추출'; }
         },
         {
