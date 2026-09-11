@@ -6040,7 +6040,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     // ── 5. 추적기 둘 (A: 필터 있음, B: 필터 없음) ─────────────────
     const MIN_TRACKS = 60, STATIC_FLOW = 1.5;
     const mkTracker = filters => ({ filters, prevP: null, pts: [], pose: T.I(), last: null, lost: 0, rr: rng(99) });
-    const S = { f: 0, A: mkTracker(true), B: mkTracker(false), marker: null, view: 'marker', dev: 0, last: null, trail: [] };
+    const S = { f: 0, A: mkTracker(true), B: mkTracker(false), marker: null, view: 'marker', dev: 0, last: null };
     let liveHandle = 0;
 
     function placeMarker(sx, sy) {
@@ -6094,7 +6094,6 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       const P = pyramid(grayOf());
       const ra = trackStep(S.A, P, f); trackStep(S.B, P, f);
       S.f = f; S.last = ra; updateDev();
-      if (S.marker) { const b = markerPos(S.B, 'B'); S.trail.push(b); if (S.trail.length > 90) S.trail.shift(); }
       return ra;
     }
 
@@ -6114,8 +6113,6 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         for (const i of r.inl) arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.ok, 3); }
       if (S.marker) {
         const a = markerPos(S.A, 'A'), b = markerPos(S.B, 'B');
-        if (S.trail.length > 1) { ctx.strokeStyle = 'rgba(255,92,77,.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(S.trail[0][0], S.trail[0][1]); for (const t of S.trail) ctx.lineTo(t[0], t[1]); ctx.stroke(); }
-        if (S.dev > 2) { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]); }
         ctx.setLineDash([3, 3]); ctx.strokeStyle = COL.raw; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(b[0], b[1], 14, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = COL.raw; ctx.font = '10px sans-serif'; ctx.fillText('필터 없음', b[0] + 16, b[1] + 22);
         ctx.strokeStyle = COL.mark; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(a[0], a[1], 12, 0, 6.283); ctx.stroke();
@@ -6135,7 +6132,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     async function resetAll() {
       if (liveHandle) { try { vid.cancelVideoFrameCallback && vid.cancelVideoFrameCallback(liveHandle); } catch (e) {} liveHandle = 0; }
       vid.pause();
-      S.f = 0; S.A = mkTracker(true); S.B = mkTracker(false); S.last = null; S.dev = 0; S.trail = [];
+      S.f = 0; S.A = mkTracker(true); S.B = mkTracker(false); S.last = null; S.dev = 0;
       await ready(); await seekTo(0); renderFrame();
       S.marker = null; placeMarker(258, 92); // 기본 마커: 공작기계 스핀들
       draw({ f: 0, feats: [], status: 'ready' });
