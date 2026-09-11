@@ -1765,6 +1765,12 @@
   .vf #rag-root .trow text{fill:var(--body-muted); font-family:var(--code); font-size:11px; font-weight:600; letter-spacing:0;}
   .vf #rag-root .trow.on text{fill:#fff;}
 
+  /* ---------- onAiR 시연 — 캔버스 ---------- */
+  .vf #onair-demos h4.sec + p{color:var(--body-muted); font-size:15px; line-height:1.6; margin:0 0 8px;}
+  .vf #ar-root canvas{width:100%; max-width:760px; display:block; margin:0 auto; border-radius:10px; background:#000; cursor:crosshair;}
+  .vf #ar-root svg{display:none;}
+  .vf #ar-root .ar-status{margin:14px auto 0; max-width:760px; font-family:var(--code); font-size:12.5px; letter-spacing:0; color:var(--body-muted); text-align:center;}
+
   /* ---------- 시연 조작부 — ① 고르기 → ② 재생 ---------- */
   .vf .demo-bar--steps{flex-direction:column; align-items:stretch; gap:12px;}
   .vf .dstep{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
@@ -5741,6 +5747,486 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     </div>
   </div>
 </section>
+
+<!-- ============ onAiR : Deep Dive (AR Tracking 시연) ============ -->
+<section class="tile tile--light tile--tight" id="onair-deep">
+  <div class="wrap">
+    <p class="sectlabel">Deep Dive</p>
+    <h3 class="display-md">카메라가 움직여도 마커가 제자리에 — 단계별로</h3>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">합성한 산업현장 영상 위에서 특징점 추출부터 마커 재투영까지 실제로 계산합니다. 필터를 끄면 마커가 떠밀리는 드리프트를 그대로 볼 수 있습니다.</p>
+    <div class="ts" style="margin-top:32px">
+      <div class="tscard">
+        <span class="tag tag--c">제약</span>
+        <ul>
+          <li>상용 AR 라이브러리 없이 이미지 분석만으로</li>
+          <li>헬멧 카메라 스트림을 프레임마다 실시간 처리</li>
+          <li>지나가는 사람·장비처럼 배경과 다르게 움직이는 것이 섞임</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--t">판단</span>
+        <ul>
+          <li>특징점은 "많이"보다 "고르게" — 한쪽에 몰리면 카메라 이동을 못 읽음</li>
+          <li>잘못 추적된 점 하나가 평균을 끌고 가므로, 버리는 규칙을 세 겹으로</li>
+          <li>살아남은 점이 줄면 그때그때 채워 넣어 추적을 끊지 않음</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--s">선택</span>
+        <ul>
+          <li>6×8 그리드 GFTT → LK 왕복 추적(Forward–Backward)</li>
+          <li>평균+1.5σ 이상치 제거 → RANSAC → 방향·그리드 일관성</li>
+          <li>이동을 누적해 마커 재투영 · 추적점 60개 미만이면 재추출</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="vf" id="onair-demos" style="padding:0 0 96px">
+<div class="vfwrap">
+
+  <h4 class="sec" style="margin-top:0">시연 — 합성 현장 영상 위 AR 마커 고정</h4>
+  <p style="max-width:70ch">영상은 브라우저가 직접 그린 합성 장면입니다(저작권·초상권 문제 없음). 카메라가 어떻게 움직였는지 정답을 알고 있어서, 마커가 정답 위치에서 몇 픽셀 벗어났는지(드리프트)를 실시간으로 잽니다. 화면을 클릭하면 마커를 옮길 수 있습니다.</p>
+
+  <div class="demo flowdemo" id="ar-root">
+    <div class="demo-bar demo-bar--steps">
+      <div class="dstep">
+        <span class="dnum">1</span><span class="dlabel">보기</span>
+        <button type="button" class="opt" data-view="feat" aria-pressed="false">특징점</button>
+        <button type="button" class="opt" data-view="flow" aria-pressed="false">Optical Flow</button>
+        <button type="button" class="opt" data-view="filter" aria-pressed="false">FB·이상치 제거</button>
+        <button type="button" class="opt" data-view="ransac" aria-pressed="false">RANSAC</button>
+        <button type="button" class="opt" data-view="marker" aria-pressed="true">마커</button>
+      </div>
+      <div class="dstep">
+        <span class="dnum">2</span><span class="dlabel">필터</span>
+        <button type="button" class="opt" id="ar-fon" aria-pressed="true">켜기 — 정상</button>
+        <button type="button" class="opt" id="ar-foff" aria-pressed="false">끄기 — 드리프트 재현</button>
+      </div>
+      <div class="dstep">
+        <span class="dnum">3</span><span class="dlabel">재생</span>
+        <button type="button" class="run" id="ar-run">▶ 실행</button>
+        <button type="button" class="ghost" id="ar-reset">처음으로</button>
+      </div>
+      <p class="dhint">「▶ 실행」을 누르면 첫 프레임 쌍을 단계별로 보여준 뒤 연속 추적으로 넘어갑니다. 재생 중에 보기를 바꿔도 됩니다.</p>
+    </div>
+
+    <div class="demo-pane">
+      <h5>추적 화면 <span id="ar-progress">0 / 0</span></h5>
+      <div class="fig-scroll">
+        <canvas id="ar-cv" width="480" height="270" aria-label="합성 산업현장 영상 위에 특징점·Optical Flow·필터 결과·마커가 겹쳐 그려진 추적 화면"></canvas>
+        <svg id="ar-svg" width="0" height="0" aria-hidden="true"></svg>
+      </div>
+      <p class="ar-status" id="ar-status">대기 중</p>
+    </div>
+
+    <div class="demo-pane stagewrap">
+      <h5>처리 로그</h5>
+      <ol class="stagelog" id="ar-log"></ol>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  // ── onAiR 시연 · AR Tracking ─────────────────────────────────────
+  // onAiR 저장소(ai_ar/app/ar)의 규칙을 시연용으로 자바스크립트로 재구현했다.
+  //   특징점  : 6×8 그리드 Shi-Tomasi(GFTT), 셀당 최대 25, quality 0.01(합성 장면 기준), 최소 거리 8
+  //   추적    : 피라미드 LK 순방향+역방향, FB 신뢰도 상위 95%, LK 오차 중앙값×3,
+  //             |flow| > 평균 + 1.5σ 제거, 유효 5개 미만이면 실패
+  //   정제    : RANSAC(1.0px, 0.999) → 전역 방향 cos > 0.5 → 8×6 그리드 일관성(z 2.0)
+  //   자세    : 인라이어로 프레임 간 이동을 추정해 누적, 평균 이동 1.5px 미만이면 정지
+  //   재추출  : 살아남은 추적점 60개 미만이면 새 특징점 추가, 실패 시 전체 재추출
+  // 3D 자세(Essential Matrix)는 시연에서 2D 평면 이동(이동·회전·배율)으로 단순화했다.
+  (function () {
+    const ROOT = document.getElementById('ar-root');
+    if (!ROOT) return;
+    const F = window.pkFlow(ROOT, 'ar-svg', 'ar-log', 'ar-progress');
+    const cv = ROOT.querySelector('#ar-cv');
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    const statusEl = ROOT.querySelector('#ar-status');
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const VW = cv.width, VH = cv.height;
+
+    // ── 0. 합성 장면 ───────────────────────────────────────────────
+    function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+    const WW = 1100, WH = 620;
+    const world = document.createElement('canvas'); world.width = WW; world.height = WH;
+    (function drawWorld() {
+      const g = world.getContext('2d');
+      const R = rng(20251120);
+      const grad = g.createLinearGradient(0, 0, 0, WH); grad.addColorStop(0, '#5f6670'); grad.addColorStop(1, '#3c4149');
+      g.fillStyle = grad; g.fillRect(0, 0, WW, WH);
+      // 벽 패널 이음새
+      g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2;
+      for (let x = 0; x <= WW; x += 220) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, WH); g.stroke(); }
+      for (let y = 0; y <= WH; y += 155) { g.beginPath(); g.moveTo(0, y); g.lineTo(WW, y); g.stroke(); }
+      // 리벳
+      g.fillStyle = '#2a2e34';
+      for (let x = 12; x < WW; x += 220) for (let y = 12; y < WH; y += 155) { g.beginPath(); g.arc(x, y, 4, 0, 6.283); g.fill(); }
+      // 질감 노이즈 — 특징점이 잡히도록 미세한 밝기 변화를 준다
+      for (let i = 0; i < 9000; i++) { const v = R() * 60 - 30; g.fillStyle = `rgba(${v > 0 ? 255 : 0},${v > 0 ? 255 : 0},${v > 0 ? 255 : 0},${Math.abs(v) / 255})`; g.fillRect(R() * WW, R() * WH, 2 + R() * 3, 2 + R() * 3); }
+      // 수평 배관
+      function pipeH(y, h) {
+        const pg = g.createLinearGradient(0, y, 0, y + h); pg.addColorStop(0, '#9aa3ad'); pg.addColorStop(.5, '#d7dde3'); pg.addColorStop(1, '#6d747c');
+        g.fillStyle = pg; g.fillRect(0, y, WW, h);
+        for (let x = 90; x < WW; x += 260) { g.fillStyle = '#4a5058'; g.fillRect(x, y - 6, 26, h + 12); g.fillStyle = '#c9cfd6'; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(x + 13, y - 2 + k * ((h + 4) / 3), 3.2, 0, 6.283); g.fill(); } }
+      }
+      pipeH(120, 34); pipeH(470, 26);
+      // 수직 배관
+      const vg = g.createLinearGradient(820, 0, 860, 0); vg.addColorStop(0, '#6d747c'); vg.addColorStop(.5, '#d7dde3'); vg.addColorStop(1, '#9aa3ad');
+      g.fillStyle = vg; g.fillRect(820, 0, 40, WH);
+      g.fillStyle = '#4a5058'; g.fillRect(814, 200, 52, 22); g.fillRect(814, 380, 52, 22);
+      // 계기판
+      function gauge(cx, cy, r, needle) {
+        g.fillStyle = '#e9ecef'; g.beginPath(); g.arc(cx, cy, r, 0, 6.283); g.fill();
+        g.strokeStyle = '#1f2327'; g.lineWidth = 5; g.stroke();
+        g.strokeStyle = '#1f2327'; g.lineWidth = 2;
+        for (let i = 0; i <= 20; i++) { const a = Math.PI * .75 + i * (Math.PI * 1.5 / 20); const l = i % 5 === 0 ? 12 : 6; g.beginPath(); g.moveTo(cx + Math.cos(a) * (r - 6), cy + Math.sin(a) * (r - 6)); g.lineTo(cx + Math.cos(a) * (r - 6 - l), cy + Math.sin(a) * (r - 6 - l)); g.stroke(); }
+        g.fillStyle = '#c9362c'; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(needle) * (r - 14), cy + Math.sin(needle) * (r - 14)); g.lineWidth = 3; g.strokeStyle = '#c9362c'; g.stroke();
+        g.fillStyle = '#1f2327'; g.beginPath(); g.arc(cx, cy, 5, 0, 6.283); g.fill();
+      }
+      gauge(300, 320, 52, Math.PI * 1.15); gauge(1000, 300, 36, Math.PI * 1.6);
+      // 제어반
+      g.fillStyle = '#2f343b'; g.fillRect(560, 230, 200, 250); g.strokeStyle = '#141619'; g.lineWidth = 3; g.strokeRect(560, 230, 200, 250);
+      g.fillStyle = '#0e1418'; g.fillRect(578, 248, 164, 70); g.fillStyle = '#3ddc84'; g.font = 'bold 14px monospace'; g.fillText('PUMP-02  RUN', 588, 276); g.fillStyle = '#9fe8bf'; g.fillText('P 4.2 bar  T 61C', 588, 300);
+      const cols = ['#c9362c', '#f2b705', '#3ddc84', '#2997ff'];
+      for (let i = 0; i < 8; i++) { g.fillStyle = cols[i % 4]; g.beginPath(); g.arc(590 + (i % 4) * 46, 350 + Math.floor(i / 4) * 46, 12, 0, 6.283); g.fill(); g.strokeStyle = '#111'; g.lineWidth = 2; g.stroke(); }
+      g.fillStyle = '#d7dde3'; g.fillRect(578, 440, 164, 24); g.fillStyle = '#1f2327'; g.font = 'bold 13px sans-serif'; g.fillText('LINE A · P-101', 590, 457);
+      // 밸브 핸들
+      g.strokeStyle = '#b8262a'; g.lineWidth = 6; g.beginPath(); g.arc(150, 520, 34, 0, 6.283); g.stroke();
+      for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; g.beginPath(); g.moveTo(150, 520); g.lineTo(150 + Math.cos(a) * 34, 520 + Math.sin(a) * 34); g.stroke(); }
+      // 경고 띠
+      g.save(); g.beginPath(); g.rect(0, 580, WW, 40); g.clip();
+      for (let x = -40; x < WW + 40; x += 40) { g.fillStyle = (x / 40) % 2 === 0 ? '#f2b705' : '#1f2327'; g.beginPath(); g.moveTo(x, 580); g.lineTo(x + 20, 580); g.lineTo(x, 620); g.lineTo(x - 20, 620); g.closePath(); g.fill(); }
+      g.restore();
+      // 표지판
+      g.fillStyle = '#f2b705'; g.fillRect(400, 30, 120, 60); g.fillStyle = '#1f2327'; g.font = 'bold 16px sans-serif'; g.fillText('DANGER', 432, 56); g.font = '12px sans-serif'; g.fillText('HIGH VOLTAGE', 416, 76);
+    })();
+
+    // 배경과 다르게 움직이는 것 — 지나가는 운반차 둘. 필터 없이는 이 위의 점들이 카메라 이동으로 오인된다.
+    function drawCart(g, t) {
+      // 운반차 1 — 왼쪽에서 오른쪽
+      let x = 40 + ((t * 75) % 1040), y = 385;
+      g.fillStyle = '#e8a33d'; g.fillRect(x, y, 170, 62); g.fillStyle = '#7a4d12'; g.fillRect(x + 10, y + 10, 42, 42); g.fillRect(x + 118, y + 10, 42, 42);
+      g.fillStyle = '#1f2327'; g.beginPath(); g.arc(x + 30, y + 68, 12, 0, 6.283); g.fill(); g.beginPath(); g.arc(x + 140, y + 68, 12, 0, 6.283); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 13px sans-serif'; g.fillText('AGV-3', x + 62, y + 36);
+      // 운반차 2 — 오른쪽에서 왼쪽, 위쪽 통로
+      x = 1060 - ((t * 55) % 1040); y = 185;
+      g.fillStyle = '#3d7fe8'; g.fillRect(x, y, 140, 50); g.fillStyle = '#123c7a'; g.fillRect(x + 8, y + 8, 34, 34); g.fillRect(x + 98, y + 8, 34, 34);
+      g.fillStyle = '#1f2327'; g.beginPath(); g.arc(x + 24, y + 56, 10, 0, 6.283); g.fill(); g.beginPath(); g.arc(x + 116, y + 56, 10, 0, 6.283); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 12px sans-serif'; g.fillText('AGV-7', x + 50, y + 31);
+    }
+    // 카메라(정답). 월드 → 화면: p = s·R(θ)·(w − c) + center
+    const FPS = 24, TOTAL = 360;
+    const jit = rng(7);
+    const jx = new Float32Array(TOTAL + 1), jy = new Float32Array(TOTAL + 1);
+    for (let i = 1; i <= TOTAL; i++) { jx[i] = jx[i - 1] * 0.85 + (jit() - .5) * 2.2; jy[i] = jy[i - 1] * 0.85 + (jit() - .5) * 2.2; }
+    function camera(f) {
+      const t = f / FPS;
+      return { cx: WW / 2 + 120 * Math.sin(t * 0.55) + jx[f], cy: WH / 2 + 70 * Math.sin(t * 0.8 + 1) + jy[f], th: 0.045 * Math.sin(t * 0.35), s: 1.0 + 0.06 * Math.sin(t * 0.25) };
+    }
+    function camXf(c) { const a = c.s * Math.cos(c.th), b = c.s * Math.sin(c.th); return { a, b, tx: VW / 2 - (a * c.cx - b * c.cy), ty: VH / 2 - (b * c.cx + a * c.cy) }; }
+    function renderFrame(f) {
+      const c = camera(f), X = camXf(c);
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
+      ctx.setTransform(X.a, X.b, -X.b, X.a, X.tx, X.ty);
+      ctx.drawImage(world, 0, 0);
+      drawCart(ctx, f / FPS);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      return X;
+    }
+
+    // ── 2D 유사변환 유틸 (a+ib 회전·배율, t 이동) ────────────────────
+    const T = {
+      apply: (X, x, y) => [X.a * x - X.b * y + X.tx, X.b * x + X.a * y + X.ty],
+      compose: (B, A) => ({ a: B.a * A.a - B.b * A.b, b: B.b * A.a + B.a * A.b, tx: B.a * A.tx - B.b * A.ty + B.tx, ty: B.b * A.tx + B.a * A.ty + B.ty }),
+      invert: X => { const d = X.a * X.a + X.b * X.b; const a = X.a / d, b = -X.b / d; return { a, b, tx: -(a * X.tx - b * X.ty), ty: -(b * X.tx + a * X.ty) }; },
+      I: () => ({ a: 1, b: 0, tx: 0, ty: 0 }),
+      fromPairs(p, q, idx) { // 최소제곱 유사변환 p→q
+        let n = idx.length, pcx = 0, pcy = 0, qcx = 0, qcy = 0;
+        for (const i of idx) { pcx += p[i][0]; pcy += p[i][1]; qcx += q[i][0]; qcy += q[i][1]; }
+        pcx /= n; pcy /= n; qcx /= n; qcy /= n;
+        let re = 0, im = 0, den = 0;
+        for (const i of idx) { const px = p[i][0] - pcx, py = p[i][1] - pcy, qx = q[i][0] - qcx, qy = q[i][1] - qcy; re += px * qx + py * qy; im += px * qy - py * qx; den += px * px + py * py; }
+        if (den < 1e-9) return null;
+        const a = re / den, b = im / den;
+        return { a, b, tx: qcx - (a * pcx - b * pcy), ty: qcy - (b * pcx + a * pcy) };
+      }
+    };
+
+    // ── 1. 그레이 · 피라미드 · 그래디언트 ───────────────────────────
+    function grayOf() {
+      const d = ctx.getImageData(0, 0, VW, VH).data, g = new Float32Array(VW * VH);
+      for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+      return g;
+    }
+    function down(img, w, h) {
+      const w2 = w >> 1, h2 = h >> 1, o = new Float32Array(w2 * h2);
+      for (let y = 0; y < h2; y++) for (let x = 0; x < w2; x++) { const i = 2 * y * w + 2 * x; o[y * w2 + x] = 0.25 * (img[i] + img[i + 1] + img[i + w] + img[i + w + 1]); }
+      return o;
+    }
+    function grads(img, w, h) {
+      const gx = new Float32Array(w * h), gy = new Float32Array(w * h);
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const i = y * w + x; gx[i] = 0.5 * (img[i + 1] - img[i - 1]); gy[i] = 0.5 * (img[i + w] - img[i - w]); }
+      return { gx, gy };
+    }
+    function pyramid(g) {
+      const L = [{ img: g, w: VW, h: VH }];
+      for (let l = 1; l < 3; l++) { const p = L[l - 1]; L.push({ img: down(p.img, p.w, p.h), w: p.w >> 1, h: p.h >> 1 }); }
+      L.forEach(l => Object.assign(l, grads(l.img, l.w, l.h)));
+      return L;
+    }
+    function bil(img, w, x, y) { const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = y0 * w + x0; return (img[i] * (1 - fx) + img[i + 1] * fx) * (1 - fy) + (img[i + w] * (1 - fx) + img[i + w + 1] * fx) * fy; }
+
+    // ── 2. 특징점 — 그리드 Shi-Tomasi ───────────────────────────────
+    const GRID_R = 6, GRID_C = 8, MAX_CELL = 25, QUALITY = 0.01, MIN_DIST = 8, BORDER = 8;
+    function shiTomasi(L0) {
+      const { gx, gy, w, h } = L0, r = 2;
+      const xx = new Float32Array(w * h), yy = new Float32Array(w * h), xy = new Float32Array(w * h);
+      for (let i = 0; i < w * h; i++) { xx[i] = gx[i] * gx[i]; yy[i] = gy[i] * gy[i]; xy[i] = gx[i] * gy[i]; }
+      const box = src => { const t = new Float32Array(w * h), o = new Float32Array(w * h);
+        for (let y = 0; y < h; y++) { let s = 0; for (let x = 0; x < w; x++) { s += src[y * w + x]; if (x > 2 * r) s -= src[y * w + x - 2 * r - 1]; if (x >= r) t[y * w + x - r] = s; } }
+        for (let x = 0; x < w; x++) { let s = 0; for (let y = 0; y < h; y++) { s += t[y * w + x]; if (y > 2 * r) s -= t[(y - 2 * r - 1) * w + x]; if (y >= r) o[(y - r) * w + x] = s; } }
+        return o; };
+      const A = box(xx), C = box(yy), B = box(xy), R = new Float32Array(w * h);
+      let mx = 0;
+      for (let i = 0; i < w * h; i++) { const a = A[i], c = C[i], b = B[i]; const l = 0.5 * ((a + c) - Math.sqrt((a - c) * (a - c) + 4 * b * b)); R[i] = l; if (l > mx) mx = l; }
+      return { R, mx };
+    }
+    function extractFeatures(L0, existing) {
+      const { R, mx } = shiTomasi(L0), w = L0.w, h = L0.h, thr = mx * QUALITY;
+      const cw = w / GRID_C, ch = h / GRID_R, out = existing ? existing.slice() : [];
+      const far = (x, y) => { for (const p of out) { const dx = p[0] - x, dy = p[1] - y; if (dx * dx + dy * dy < MIN_DIST * MIN_DIST) return false; } return true; };
+      for (let gr = 0; gr < GRID_R; gr++) for (let gc = 0; gc < GRID_C; gc++) {
+        const cand = [];
+        const x1 = Math.max(BORDER, Math.floor(gc * cw)), x2 = Math.min(w - BORDER, Math.floor((gc + 1) * cw)), y1 = Math.max(BORDER, Math.floor(gr * ch)), y2 = Math.min(h - BORDER, Math.floor((gr + 1) * ch));
+        for (let y = y1; y < y2; y++) for (let x = x1; x < x2; x++) { const i = y * w + x, v = R[i]; if (v < thr) continue;
+          if (v >= R[i - 1] && v >= R[i + 1] && v >= R[i - w] && v >= R[i + w] && v >= R[i - w - 1] && v >= R[i - w + 1] && v >= R[i + w - 1] && v >= R[i + w + 1]) cand.push([x, y, v]); }
+        cand.sort((p, q) => q[2] - p[2]);
+        let k = 0; for (const c of cand) { if (k >= MAX_CELL) break; if (far(c[0], c[1])) { out.push([c[0], c[1]]); k++; } }
+      }
+      return out;
+    }
+
+    // ── 3. 피라미드 LK 추적 (순방향·역방향) ────────────────────────
+    const WIN = 7, ITERS = 10, EPS = 0.03;
+    function lk(PA, PB, pts) {
+      const n = pts.length, out = new Array(n), st = new Uint8Array(n), err = new Float32Array(n);
+      for (let k = 0; k < n; k++) {
+        let gx = 0, gy = 0, ok = true, e = 0;
+        for (let l = PA.length - 1; l >= 0; l--) {
+          const A = PA[l], B = PB[l], sc = 1 / (1 << l), px = pts[k][0] * sc, py = pts[k][1] * sc;
+          let vx = 0, vy = 0;
+          if (px - WIN < 1 || py - WIN < 1 || px + WIN >= A.w - 2 || py + WIN >= A.h - 2) { ok = false; break; }
+          let a11 = 0, a12 = 0, a22 = 0;
+          for (let dy = -WIN; dy <= WIN; dy++) for (let dx = -WIN; dx <= WIN; dx++) { const ix = bil(A.gx, A.w, px + dx, py + dy), iy = bil(A.gy, A.w, px + dx, py + dy); a11 += ix * ix; a12 += ix * iy; a22 += iy * iy; }
+          const det = a11 * a22 - a12 * a12; if (det < 1e-4) { ok = false; break; }
+          for (let it = 0; it < ITERS; it++) {
+            const qx = px + gx + vx, qy = py + gy + vy;
+            if (qx - WIN < 1 || qy - WIN < 1 || qx + WIN >= B.w - 2 || qy + WIN >= B.h - 2) { ok = false; break; }
+            let b1 = 0, b2 = 0, se = 0;
+            for (let dy = -WIN; dy <= WIN; dy++) for (let dx = -WIN; dx <= WIN; dx++) { const it2 = bil(B.img, B.w, qx + dx, qy + dy) - bil(A.img, A.w, px + dx, py + dy); const ix = bil(A.gx, A.w, px + dx, py + dy), iy = bil(A.gy, A.w, px + dx, py + dy); b1 += ix * it2; b2 += iy * it2; se += Math.abs(it2); }
+            const dvx = -(a22 * b1 - a12 * b2) / det, dvy = -(-a12 * b1 + a11 * b2) / det;
+            vx += dvx; vy += dvy; e = se / ((2 * WIN + 1) * (2 * WIN + 1));
+            if (Math.abs(dvx) < EPS && Math.abs(dvy) < EPS) break;
+          }
+          if (!ok) break;
+          gx = 2 * (gx + vx); gy = 2 * (gy + vy);
+          if (l === 0) { gx /= 2; gy /= 2; }
+        }
+        st[k] = ok ? 1 : 0; err[k] = e; out[k] = ok ? [pts[k][0] + gx, pts[k][1] + gy] : [pts[k][0], pts[k][1]];
+      }
+      return { pts: out, st, err };
+    }
+    // FB 신뢰도 상위 95% + LK 오차 중앙값×3 + |flow| > 평균+1.5σ
+    function trackFeatures(PA, PB, pts, filters) {
+      const fwd = lk(PA, PB, pts), bwd = lk(PB, PA, fwd.pts);
+      const n = pts.length, keep = new Uint8Array(n), reason = new Uint8Array(n); // 0 ok, 1 status, 2 fb, 3 err, 4 large
+      for (let i = 0; i < n; i++) keep[i] = fwd.st[i] && bwd.st[i] ? 1 : 0, reason[i] = keep[i] ? 0 : 1;
+      if (filters) {
+        const conf = [];
+        for (let i = 0; i < n; i++) if (keep[i]) { const fb = Math.hypot(pts[i][0] - bwd.pts[i][0], pts[i][1] - bwd.pts[i][1]); conf.push([Math.exp(-fb / 2.0), i]); }
+        conf.sort((a, b) => a[0] - b[0]);
+        const drop = Math.floor(conf.length * 0.05); for (let k = 0; k < drop; k++) { keep[conf[k][1]] = 0; reason[conf[k][1]] = 2; }
+        const errs = []; for (let i = 0; i < n; i++) if (keep[i]) errs.push(fwd.err[i]);
+        errs.sort((a, b) => a - b); const med = errs.length ? errs[errs.length >> 1] : 0; const et = med > 0 ? med * 3 : Infinity;
+        for (let i = 0; i < n; i++) if (keep[i] && fwd.err[i] > et) { keep[i] = 0; reason[i] = 3; }
+        let m = 0, c = 0; const fl = new Float32Array(n);
+        for (let i = 0; i < n; i++) { fl[i] = Math.hypot(fwd.pts[i][0] - pts[i][0], fwd.pts[i][1] - pts[i][1]); if (keep[i]) { m += fl[i]; c++; } }
+        if (c) { m /= c; let v = 0; for (let i = 0; i < n; i++) if (keep[i]) v += (fl[i] - m) * (fl[i] - m); const sd = Math.sqrt(v / c); if (sd > 1e-6) { const th = m + 1.5 * sd; for (let i = 0; i < n; i++) if (keep[i] && fl[i] >= th) { keep[i] = 0; reason[i] = 4; } } }
+      }
+      return { next: fwd.pts, keep, reason };
+    }
+
+    // ── 4. RANSAC + 방향 + 그리드 일관성 ───────────────────────────
+    function ransacFilter(p, q, idx, R) {
+      const n = idx.length; if (n < 8) return { inl: [], out: idx.slice(), cells: null };
+      let bestInl = [], thr = 1.0;
+      const run = th => { let best = [], iters = 300, it = 0;
+        while (it < iters) { it++; const i1 = idx[(R() * n) | 0], i2 = idx[(R() * n) | 0]; if (i1 === i2) continue;
+          const dx = p[i2][0] - p[i1][0], dy = p[i2][1] - p[i1][1], d = dx * dx + dy * dy; if (d < 1e-6) continue;
+          const ex = q[i2][0] - q[i1][0], ey = q[i2][1] - q[i1][1]; const a = (dx * ex + dy * ey) / d, b = (dx * ey - dy * ex) / d;
+          const tx = q[i1][0] - (a * p[i1][0] - b * p[i1][1]), ty = q[i1][1] - (b * p[i1][0] + a * p[i1][1]);
+          const inl = []; for (const i of idx) { const rx = a * p[i][0] - b * p[i][1] + tx - q[i][0], ry = b * p[i][0] + a * p[i][1] + ty - q[i][1]; if (rx * rx + ry * ry < th * th) inl.push(i); }
+          if (inl.length > best.length) { best = inl; const w = inl.length / n; const e = Math.log(1 - 0.999) / Math.log(1 - w * w + 1e-12); iters = Math.min(300, Math.max(20, Math.ceil(e))); } }
+        return best; };
+      bestInl = run(thr); if (bestInl.length < 8) bestInl = run(thr * 1.5);
+      if (bestInl.length < 8) return { inl: [], out: idx.slice(), cells: null };
+      let inl = bestInl;
+      // 전역 방향 필터
+      let gfx = 0, gfy = 0; for (const i of inl) { gfx += q[i][0] - p[i][0]; gfy += q[i][1] - p[i][1]; } gfx /= inl.length; gfy /= inl.length;
+      const gm = Math.hypot(gfx, gfy);
+      if (gm >= 0.5 && inl.length >= 8) { const ux = gfx / gm, uy = gfy / gm; inl = inl.filter(i => { const fx = q[i][0] - p[i][0], fy = q[i][1] - p[i][1], m = Math.hypot(fx, fy) + 1e-6; return (fx * ux + fy * uy) / m > 0.5; }); }
+      // 그리드 일관성 필터 8×6
+      let cells = null;
+      if (inl.length >= 40) {
+        const C = 8, Rr = 6, cw = VW / C, chh = VH / Rr, dir = [], mag = [], cnt = [];
+        for (let k = 0; k < C * Rr; k++) { dir.push([0, 0]); mag.push(0); cnt.push(0); }
+        for (const i of inl) { const fx = q[i][0] - p[i][0], fy = q[i][1] - p[i][1], m = Math.hypot(fx, fy) + 1e-6; const cx = Math.min(C - 1, (p[i][0] / cw) | 0), cy = Math.min(Rr - 1, (p[i][1] / chh) | 0), k = cy * C + cx; dir[k][0] += fx / m; dir[k][1] += fy / m; mag[k] += m; cnt[k]++; }
+        const coh = [], am = [], vk = [];
+        for (let k = 0; k < C * Rr; k++) if (cnt[k]) { coh[k] = Math.hypot(dir[k][0], dir[k][1]) / cnt[k]; am[k] = mag[k] / cnt[k]; vk.push(k); }
+        const mean = a => a.reduce((s, v) => s + v, 0) / a.length, sd = (a, m) => Math.sqrt(a.reduce((s, v) => s + (v - m) * (v - m), 0) / a.length) + 1e-6;
+        const cvals = vk.map(k => coh[k]), mv = vk.map(k => am[k]), cm = mean(cvals), cs = sd(cvals, cm), mm = mean(mv), ms = sd(mv, mm);
+        cells = new Uint8Array(C * Rr);
+        for (const k of vk) if ((coh[k] - cm) / cs < -2.0 || (am[k] - mm) / ms > 2.0) cells[k] = 1;
+        inl = inl.filter(i => { const cx = Math.min(C - 1, (p[i][0] / cw) | 0), cy = Math.min(Rr - 1, (p[i][1] / chh) | 0); return !cells[cy * C + cx]; });
+      }
+      const set = new Set(inl);
+      return { inl, out: idx.filter(i => !set.has(i)), cells };
+    }
+
+    // ── 5. 상태 · 프레임 처리 ────────────────────────────────────────
+    const MIN_TRACKS = 60, STATIC_FLOW = 1.5;
+    const S = { f: 0, prevP: null, pts: [], pose: T.I(), marker: null, last: null, filters: true, view: 'marker', rr: rng(99), lost: 0, drift: 0 };
+    let anim = 0;
+
+    function placeMarker(sx, sy) {
+      // 앵커: 클릭한 화면 픽셀을 현재 추정 자세로 역투영해 저장(월드 좌표) — 정답 자세로도 저장해 드리프트를 잰다
+      const inv = T.invert(S.pose), tinv = T.invert(camXf(camera(S.f)));
+      S.marker = { est: T.apply(inv, sx, sy), gt: T.apply(tinv, sx, sy) };
+    }
+
+    function processFrame(f) {
+      renderFrame(f);
+      const P = pyramid(grayOf());
+      const res = { f, status: 'init', feats: S.pts, track: null, ransac: null, step: null };
+      if (!S.prevP) { S.pts = extractFeatures(P[0]); res.feats = S.pts; S.prevP = P; S.f = f; res.status = 'init'; S.last = res; return res; }
+      if (S.pts.length > 0) {
+        const tr = trackFeatures(S.prevP, P, S.pts, S.filters);
+        const idx = []; for (let i = 0; i < S.pts.length; i++) if (tr.keep[i]) idx.push(i);
+        res.track = { prev: S.pts, next: tr.next, keep: tr.keep, reason: tr.reason, idx };
+        if (idx.length >= 5) {
+          let fm = 0; for (const i of idx) fm += Math.hypot(tr.next[i][0] - S.pts[i][0], tr.next[i][1] - S.pts[i][1]); fm /= idx.length;
+          let rs = S.filters ? ransacFilter(S.pts, tr.next, idx, S.rr) : { inl: idx.slice(), out: [], cells: null };
+          res.ransac = rs;
+          if (fm < STATIC_FLOW && idx.length >= MIN_TRACKS) { res.status = 'static'; S.f = f; S.last = res; return res; }
+          else if (rs.inl.length > 8) {
+            const step = T.fromPairs(S.pts, tr.next, rs.inl);
+            if (step) { S.pose = T.compose(step, S.pose); res.step = step; res.status = 'ok'; }
+          } else res.status = 'lost';
+          if (res.status !== 'lost') {
+            const surv = idx.map(i => tr.next[i]);
+            S.pts = surv.length < MIN_TRACKS ? extractFeatures(P[0], surv) : surv;
+            res.feats = S.pts; S.prevP = P; S.f = f; S.last = res;
+            if (S.marker) { const e = T.apply(S.pose, S.marker.est[0], S.marker.est[1]), g = T.apply(camXf(camera(f)), S.marker.gt[0], S.marker.gt[1]); S.drift = Math.hypot(e[0] - g[0], e[1] - g[1]); }
+            return res;
+          }
+        } else res.status = 'lost';
+      }
+      // 추적 실패 → 전체 재추출, 자세는 그대로
+      S.lost++; S.pts = extractFeatures(P[0]); res.feats = S.pts; S.prevP = P; S.f = f; res.status = 'lost'; S.last = res; return res;
+    }
+
+    // ── 6. 오버레이 ────────────────────────────────────────────────
+    const COL = { ok: '#3ddc84', bad: '#ff5c4d', flow: '#ffd23f', mark: '#2997ff', gt: 'rgba(255,255,255,.75)' };
+    function arrow(x1, y1, x2, y2, col, k) { const dx = (x2 - x1) * k, dy = (y2 - y1) * k; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + dx, y1 + dy); ctx.stroke(); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x1 + dx, y1 + dy, 2, 0, 6.283); ctx.fill(); }
+    function cross(x, y, col) { ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y + 4); ctx.moveTo(x - 4, y + 4); ctx.lineTo(x + 4, y - 4); ctx.stroke(); }
+    function draw(res, view) {
+      const v = view || S.view;
+      if (!res) return;
+      if (v === 'feat') { ctx.fillStyle = COL.ok; for (const p of res.feats) { ctx.beginPath(); ctx.arc(p[0], p[1], 2.4, 0, 6.283); ctx.fill(); } }
+      if (v === 'flow' && res.track) { const t = res.track; for (let i = 0; i < t.prev.length; i++) if (t.reason[i] !== 1) arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.flow, 4); }
+      if (v === 'filter' && res.track) { const t = res.track; for (let i = 0; i < t.prev.length; i++) { if (t.reason[i] === 1) continue; if (t.keep[i]) arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.ok, 4); else { arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.bad, 4); cross(t.prev[i][0], t.prev[i][1], COL.bad); } } }
+      if (v === 'ransac' && res.track && res.ransac) { const t = res.track, r = res.ransac;
+        if (r.cells) { const cw = VW / 8, ch = VH / 6; ctx.fillStyle = 'rgba(255,92,77,.18)'; for (let k = 0; k < 48; k++) if (r.cells[k]) ctx.fillRect((k % 8) * cw, ((k / 8) | 0) * ch, cw, ch); }
+        for (const i of r.out) { arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.bad, 4); cross(t.prev[i][0], t.prev[i][1], COL.bad); }
+        for (const i of r.inl) arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.ok, 4); }
+      if (S.marker) {
+        const e = T.apply(S.pose, S.marker.est[0], S.marker.est[1]), g = T.apply(camXf(camera(res.f)), S.marker.gt[0], S.marker.gt[1]);
+        {
+          ctx.setLineDash([3, 3]); ctx.strokeStyle = COL.gt; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(g[0], g[1], 14, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+          ctx.strokeStyle = COL.mark; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(e[0], e[1], 12, 0, 6.283); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(e[0] - 18, e[1]); ctx.lineTo(e[0] - 6, e[1]); ctx.moveTo(e[0] + 6, e[1]); ctx.lineTo(e[0] + 18, e[1]); ctx.moveTo(e[0], e[1] - 18); ctx.lineTo(e[0], e[1] - 6); ctx.moveTo(e[0], e[1] + 6); ctx.lineTo(e[0], e[1] + 18); ctx.stroke();
+          ctx.fillStyle = COL.mark; ctx.font = 'bold 11px sans-serif'; ctx.fillText('점검 지점', e[0] + 16, e[1] - 12);
+        }
+      }
+      // HUD
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(6, 6, 236, 20);
+      ctx.fillStyle = '#fff'; ctx.font = '11px monospace';
+      const tracks = res.track ? res.track.idx.length : res.feats.length, inl = res.ransac ? res.ransac.inl.length : 0;
+      ctx.fillText(`f ${res.f}  추적 ${tracks}  인라이어 ${inl}  ${res.status}  드리프트 ${S.drift.toFixed(1)}px`, 10, 20);
+    }
+    function status(text) { statusEl.textContent = text; }
+
+    // ── 7. 시연 진행 ──────────────────────────────────────────────
+    function resetAll() {
+      cancelAnimationFrame(anim); anim = 0;
+      S.f = 0; S.prevP = null; S.pts = []; S.pose = T.I(); S.last = null; S.lost = 0; S.drift = 0; S.rr = rng(99);
+      renderFrame(0); S.marker = null;
+      // 기본 마커: 제어반 표시창(월드 660,283)을 첫 화면에 투영한 위치
+      const g = T.apply(camXf(camera(0)), 660, 283); placeMarker(g[0], g[1]);
+      draw({ f: 0, feats: [], status: 'ready' }); status('대기 중 — 「▶ 실행」을 누르세요. 파란 십자가 마커, 흰 점선이 정답 위치입니다.');
+    }
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    async function showStep(view, f, mine) { S.view = view; syncView(); const res = processFrame(f); draw(res, view); return mine === F.runId; }
+    function live(mine) {
+      return new Promise(resolve => {
+        let last = performance.now(), f = S.f;
+        const tick = now => {
+          if (mine !== F.runId) { resolve(false); return; }
+          if (now - last >= 1000 / FPS) { last = now; f++; if (f > TOTAL) { resolve(true); return; }
+            const res = processFrame(f); draw(res);
+            status(`프레임 ${f}/${TOTAL} · 추적점 ${res.track ? res.track.idx.length : res.feats.length} · 인라이어 ${res.ransac ? res.ransac.inl.length : 0} · 상태 ${res.status} · 재추출 ${S.lost}회 · 마커 드리프트 ${S.drift.toFixed(1)}px${S.filters ? '' : ' (필터 꺼짐)'}`); }
+          anim = requestAnimationFrame(tick);
+        };
+        anim = requestAnimationFrame(tick);
+      });
+    }
+    function steps() {
+      return [
+        { st: '첫 프레임 — 특징점 추출 (6×8 그리드 GFTT)', sd: '화면을 48칸으로 나눠 칸마다 코너를 뽑습니다. 한쪽에 몰리지 않아야 카메라 이동을 제대로 읽습니다. 최소 거리 8px, 품질 상위 5%',
+          phases: [{ run: async mine => { resetAll(); return showStep('feat', 0, mine); } }], hold: 1200 },
+        { st: '다음 프레임 — Optical Flow (피라미드 LK, 순방향)', sd: '각 특징점이 다음 프레임에서 어디로 갔는지 15×15 창으로 찾습니다. 노란 화살표가 이동 벡터(4배 확대)',
+          phases: [{ run: async mine => showStep('flow', 1, mine) }], hold: 1200 },
+        { st: 'Forward–Backward 검사 · 오차 · 이상치 제거', sd: '역방향으로 되돌려 원래 자리로 못 오는 점, LK 오차가 중앙값×3을 넘는 점, |이동| > 평균+1.5σ 인 점을 버립니다(빨간 ✕)',
+          phases: [{ run: async mine => { renderFrame(S.last.f); draw(S.last, 'filter'); S.view = 'filter'; syncView(); return mine === F.runId; } }], hold: 1200 },
+        { st: 'RANSAC + 전역 방향 + 그리드 일관성', sd: '남은 벡터로 카메라 이동 모델을 합의해 맞지 않는 점을 버리고, 전역 방향과 반대인 점, 이상한 칸(붉게 칠한 셀)의 점도 버립니다. 운반차 위의 점이 여기서 걸러집니다',
+          phases: [{ run: async mine => { renderFrame(S.last.f); draw(S.last, 'ransac'); S.view = 'ransac'; syncView(); return mine === F.runId; } }], hold: 1200 },
+        { st: '이동 추정 → 자세 누적 → 마커 재투영', sd: '인라이어로 프레임 간 이동을 추정해 누적 자세에 곱하고, 저장해 둔 마커 좌표를 다시 투영합니다. 파란 십자가 추정, 흰 점선 원이 정답',
+          phases: [{ run: async mine => { renderFrame(S.last.f); draw(S.last, 'marker'); S.view = 'marker'; syncView(); return mine === F.runId; } }], hold: 1200 },
+        { st: '연속 추적 — 카메라가 흔들리고 운반차가 지나가는 동안', sd: '추적점이 60개 아래로 떨어지면 새 특징점을 채우고, 추적 실패 시 전체 재추출합니다. 평균 이동이 1.5px 미만이면 정지로 보고 갱신하지 않습니다. 보기를 바꿔 가며 확인하세요',
+          phases: [{ run: mine => live(mine) }],
+          after() { status(`끝 — ${TOTAL}프레임 · 최종 마커 드리프트 ${S.drift.toFixed(1)}px · 재추출 ${S.lost}회${S.filters ? '' : ' (필터 꺼짐)'}`); } }
+      ];
+    }
+
+    // 조작
+    const viewBtns = [...ROOT.querySelectorAll('button[data-view]')];
+    function syncView() { viewBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.view === S.view ? 'true' : 'false')); }
+    viewBtns.forEach(b => b.addEventListener('click', () => { S.view = b.dataset.view; syncView(); if (S.last) { renderFrame(S.last.f); draw(S.last); } }));
+    const fon = ROOT.querySelector('#ar-fon'), foff = ROOT.querySelector('#ar-foff');
+    function setFilters(on) { S.filters = on; fon.setAttribute('aria-pressed', on ? 'true' : 'false'); foff.setAttribute('aria-pressed', on ? 'false' : 'true'); }
+    fon.addEventListener('click', () => setFilters(true)); foff.addEventListener('click', () => setFilters(false));
+    cv.addEventListener('click', e => { const r = cv.getBoundingClientRect(); const x = (e.clientX - r.left) * VW / r.width, y = (e.clientY - r.top) * VH / r.height; placeMarker(x, y); if (S.last) { renderFrame(S.last.f); draw(S.last); } });
+    ROOT.querySelector('#ar-run').addEventListener('click', () => F.play(steps()));
+    ROOT.querySelector('#ar-reset').addEventListener('click', () => { F.idle(steps()); resetAll(); });
+    F.idle(steps()); resetAll();
+    ROOT._ar = { processFrame, S, resetAll, draw }; // 자동 검증용 훅
+  })();
+</script>
 
 <section class="tile tile--light">
   <div class="wrap">
