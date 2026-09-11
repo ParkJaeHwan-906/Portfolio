@@ -1753,6 +1753,18 @@
   .vf #mq-root .slot .r{font-size:9.5px; font-weight:500;}
   .vf #pookie-demos h4.sec + p{color:var(--body-muted); font-size:15px; line-height:1.6; margin:0 0 8px;}
 
+  /* ---------- 연금술사 시연 — 문서 벡터 점 · Top 5 ---------- */
+  .vf #yeon-demos h4.sec + p{color:var(--body-muted); font-size:15px; line-height:1.6; margin:0 0 8px;}
+  .vf #rag-root .dot{fill:var(--hairline); transition:fill .22s, opacity .22s;}
+  .vf #rag-root .dot.scan{fill:var(--ink); transition:none;}
+  .vf #rag-root .dot.hit{fill:var(--primary);}
+  .vf #rag-root .dot.miss{fill:var(--hairline); opacity:.3;}
+  .vf #rag-root .dot.top{fill:var(--green);}
+  .vf #rag-root .trow rect{fill:var(--dia-node); stroke:var(--hairline); stroke-width:1; stroke-dasharray:4 4; transition:fill var(--t);}
+  .vf #rag-root .trow.on rect{fill:var(--green); stroke:none;}
+  .vf #rag-root .trow text{fill:var(--body-muted); font-family:var(--code); font-size:11px; font-weight:600; letter-spacing:0;}
+  .vf #rag-root .trow.on text{fill:#fff;}
+
   /* ---------- 시연 조작부 — ① 고르기 → ② 재생 ---------- */
   .vf .demo-bar--steps{flex-direction:column; align-items:stretch; gap:12px;}
   .vf .dstep{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
@@ -4935,6 +4947,12 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       items.forEach((li, j) => li.classList.toggle('on', j === i));
       prog.textContent = (i + 1) + ' / ' + items.length;
       for (const ph of (s.phases || [])) {
+        if (!Array.isArray(ph) && ph.run) {
+          // 점 이동 대신 임의의 비동기 연출(훑기 등). false 를 돌려주면 취소된 것이다
+          const ok = await ph.run(mine);
+          if (!ok || mine !== runId) return false;
+          continue;
+        }
         const legs = Array.isArray(ph) ? ph : ph.legs;
         await Promise.all(legs.map(l => animateLeg(l, dur, mine)));
         if (mine !== runId) return false;
@@ -5322,8 +5340,8 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           <h4>RAG 기반 챗봇 파이프라인 설계</h4>
           <ul class="bul">
             <li>정규식 기반 텍스트 정제로 특수문자·불필요 공백 제거, 의미 중심 Embedding 생성</li>
-            <li>Bi-Encoder Cosine Similarity로 유사 벡터를 빠르게 1차 탐색</li>
-            <li>Top-K 후보에 Cross-Encoder Reranker를 적용해 문맥 관계를 정밀 재계산</li>
+            <li>Bi-Encoder Cosine Similarity로 전체 문서 중 후보 50건을 빠르게 1차 필터링</li>
+            <li>후보 50건에만 Cross-Encoder Reranker를 적용해 재순위, Top 5만 답변 생성에 사용</li>
             <li>속도와 정확도를 균형 있게 고려한 2단계 Retrieval 구조 설계</li>
           </ul>
         </div>
@@ -5338,6 +5356,271 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     </div>
   </div>
 </section>
+
+<!-- ============ 연금술사 : Deep Dive (2단계 Retrieval 시연) ============ -->
+<section class="tile tile--light tile--tight" id="yeon-deep">
+  <div class="wrap">
+    <p class="sectlabel">Deep Dive</p>
+    <h3 class="display-md">많은 문서에서 50건, 그중 5건 — 2단계 Retrieval</h3>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">빠른 모델로 범위를 좁히고, 정확한 모델은 좁힌 범위에만 씁니다. 질문 하나가 답변 근거 5건이 되기까지를 그대로 재생합니다.</p>
+    <div class="ts" style="margin-top:32px">
+      <div class="tscard">
+        <span class="tag tag--c">제약</span>
+        <ul>
+          <li>비교할 문서가 많음</li>
+          <li>정밀 비교 모델은 정확하지만 느려서 전체에 돌릴 수 없음</li>
+          <li>빠른 모델만 쓰면 비슷한 문서끼리 순위가 흔들림</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--t">판단</span>
+        <ul>
+          <li>속도와 정확도를 한 모델에 요구하지 않음</li>
+          <li>먼저 빠르게 후보를 좁히고, 정밀 비교는 후보에만</li>
+          <li>답변에 넣는 근거는 소수만 — 많이 넣을수록 오히려 흐려짐</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--s">선택</span>
+        <ul>
+          <li>1차 · Bi-Encoder 코사인 유사도로 후보 50건</li>
+          <li>2차 · Cross-Encoder로 50건을 재순위해 Top 5</li>
+          <li>Top 5만 질문과 함께 LLM에 넘겨 답변 생성</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="vf" id="yeon-demos" style="padding:0 0 96px">
+<div class="vfwrap">
+
+  <h4 class="sec" style="margin-top:0">시연 — 전체 문서 → 후보 50 → Top 5 → 답변</h4>
+  <p style="max-width:70ch">왼쪽 점 하나가 문서 벡터 하나입니다. 1차는 전체를 빠르게 훑고, 2차는 남은 50건만 천천히 정밀하게 봅니다. 두 단계의 속도 차이도 그대로 보입니다.</p>
+
+  <div class="demo flowdemo" id="rag-root">
+    <div class="demo-bar demo-bar--steps">
+      <div class="dstep">
+        <span class="dnum">1</span><span class="dlabel">질문 고르기</span>
+        <button type="button" class="opt" id="rag-q0" aria-pressed="true">DC형과 DB형 차이</button>
+        <button type="button" class="opt" id="rag-q1" aria-pressed="false">IRP 세액공제</button>
+      </div>
+      <div class="dstep">
+        <span class="dnum">2</span><span class="dlabel">재생</span>
+        <button type="button" class="run" id="rag-run">▶ 실행</button>
+        <button type="button" class="ghost" id="rag-reset">처음으로</button>
+      </div>
+      <p class="dhint">질문을 고르고 「▶ 실행」을 누르면 점들이 걸러지는 과정과 처리 로그가 함께 진행됩니다.</p>
+    </div>
+
+    <div class="demo-pane">
+      <h5>검색 경로 <span id="rag-progress">0 / 0</span></h5>
+      <div class="fig-scroll">
+        <svg id="rag-svg" viewBox="0 0 760 400" role="img"
+             aria-label="질문을 임베딩해 전체 문서 벡터와 코사인 유사도로 빠르게 비교해 후보 50건을 고르고, 그 50건만 Cross-Encoder로 정밀 재순위해 Top 5를 뽑아 LLM 답변 생성에 넘긴다.">
+          <defs>
+            <marker id="ragm" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto">
+              <polygon points="0,0 10,4 0,8" fill="currentColor"/></marker>
+          </defs>
+
+          <rect class="zonebox" x="160" y="40" width="230" height="326" rx="8"/>
+          <text class="wlabel" x="170" y="60">전체 문서 벡터</text>
+          <text class="wlabel" x="380" y="60" text-anchor="end">1차 · 빠르게 전부</text>
+          <text class="sline" id="rag-c1" x="170" y="354"></text>
+
+          <rect class="zonebox" x="420" y="40" width="150" height="326" rx="8"/>
+          <text class="wlabel" x="430" y="60">후보 50건</text>
+          <text class="wlabel" x="560" y="60" text-anchor="end">2차 · 정밀</text>
+          <text class="sline" id="rag-c2" x="430" y="354"></text>
+
+          <rect class="zonebox" x="600" y="40" width="148" height="206" rx="8"/>
+          <text class="wlabel" x="610" y="60">Top 5</text>
+
+          <line class="wire" id="rag-w1" x1="130" y1="200" x2="160" y2="200" marker-end="url(#ragm)"/>
+          <line class="wire" id="rag-w2" x1="390" y1="200" x2="420" y2="200" marker-end="url(#ragm)"/>
+          <line class="wire" id="rag-w3" x1="570" y1="200" x2="600" y2="200" marker-end="url(#ragm)"/>
+          <line class="wire" id="rag-w4" x1="674" y1="246" x2="674" y2="270" marker-end="url(#ragm)"/>
+
+          <g class="node" id="rag-q">
+            <rect x="12" y="166" width="118" height="68" rx="3"/>
+            <text class="ntitle" x="24" y="190">질문</text>
+            <text class="nsub" id="rag-qt" x="24" y="208"></text>
+            <text class="nsub" id="rag-qt2" x="24" y="224"></text>
+          </g>
+
+          <g id="rag-all"></g>
+          <g id="rag-cand"></g>
+
+          <g id="rag-top">
+            <g class="trow" id="rag-r0"><rect x="610" y="72" width="128" height="26" rx="6"/><text x="618" y="89"></text></g>
+            <g class="trow" id="rag-r1"><rect x="610" y="106" width="128" height="26" rx="6"/><text x="618" y="123"></text></g>
+            <g class="trow" id="rag-r2"><rect x="610" y="140" width="128" height="26" rx="6"/><text x="618" y="157"></text></g>
+            <g class="trow" id="rag-r3"><rect x="610" y="174" width="128" height="26" rx="6"/><text x="618" y="191"></text></g>
+            <g class="trow" id="rag-r4"><rect x="610" y="208" width="128" height="26" rx="6"/><text x="618" y="225"></text></g>
+          </g>
+
+          <g class="node" id="rag-llm">
+            <rect x="600" y="270" width="148" height="96" rx="3"/>
+            <text class="ntitle" x="612" y="294">LLM 답변 생성</text>
+            <text class="nsub" x="612" y="312">질문 + Top 5 문서</text>
+            <text class="msg" id="rag-a1" x="612" y="336"></text>
+            <text class="msg" id="rag-a2" x="612" y="352"></text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="demo-pane stagewrap">
+      <h5>처리 로그</h5>
+      <ol class="stagelog" id="rag-log"></ol>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  // ── 연금술사 시연 · 2단계 Retrieval ───────────────────────────────
+  // POOKIE 와 같은 엔진(pkFlow)이다. 점 132개를 문서 벡터로 두고, 1차는 빠르게
+  // 전부 훑어 50개를 남기고, 2차는 그 50개만 느리게 훑어 5개를 남긴다.
+  (function () {
+    const ROOT = document.getElementById('rag-root');
+    if (!ROOT) return;
+    const F = window.pkFlow(ROOT, 'rag-svg', 'rag-log', 'rag-progress');
+    const NS = 'http://www.w3.org/2000/svg';
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const svg = F.svg;
+    const c1 = ROOT.querySelector('#rag-c1'), c2 = ROOT.querySelector('#rag-c2');
+    const qt = ROOT.querySelector('#rag-qt'), qt2 = ROOT.querySelector('#rag-qt2');
+
+    const Q = [
+      { l1: 'DC형과 DB형은', l2: '뭐가 다른가요?' },
+      { l1: 'IRP 세액공제는', l2: '얼마나 받나요?' }
+    ];
+    let qi = 0;
+
+    // 점 격자 — 전체 132개(11×12), 후보 50개(5×10)
+    function grid(g, cols, rows, x0, y0, dx, dy) {
+      g.innerHTML = '';
+      const dots = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const d = document.createElementNS(NS, 'circle');
+        d.setAttribute('cx', x0 + c * dx); d.setAttribute('cy', y0 + r * dy);
+        d.setAttribute('r', '4.5'); d.setAttribute('class', 'dot');
+        g.appendChild(d); dots.push(d);
+      }
+      return dots;
+    }
+    const ALL = grid(ROOT.querySelector('#rag-all'), 11, 12, 180, 84, 19, 22);
+    const CAND = grid(ROOT.querySelector('#rag-cand'), 5, 10, 441, 84, 27, 24);
+    const ROWS = [0, 1, 2, 3, 4].map(i => ROOT.querySelector('#rag-r' + i));
+
+    // 매 실행마다 같은 그림이 나오도록 고정 시드 난수
+    function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+    function pick(n, k, rand) {
+      const idx = [...Array(n).keys()];
+      for (let i = n - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      return idx.slice(0, k);
+    }
+
+    // 점들을 순서대로 잠깐씩 밝히며 훑는다. stagger 가 속도다 — 1차는 짧게, 2차는 길게.
+    // 타이머 대신 시간 기반(rAF)이라 탭이 느려져도 정해진 시간 안에 끝난다.
+    function sweep(dots, stagger, counter, label, mine) {
+      return new Promise(resolve => {
+        const n = dots.length;
+        const end = () => { dots.forEach(d => d.classList.remove('scan')); counter.textContent = label + ' ' + n + ' / ' + n; };
+        if (still.matches) { end(); resolve(true); return; }
+        const total = n * stagger;
+        let done = false, last = -1;
+        const finish = ok => { if (done) return; done = true; clearTimeout(guard); end(); resolve(ok); };
+        const guard = setTimeout(() => finish(true), total + 800);
+        const t0 = performance.now();
+        function frame(t) {
+          if (done) return;
+          if (mine !== F.runId) { finish(false); return; }
+          const i = Math.min(n - 1, Math.floor((t - t0) / stagger));
+          for (let k = last + 1; k <= i; k++) { dots[k].classList.add('scan'); if (k - 4 >= 0) dots[k - 4].classList.remove('scan'); }
+          last = i;
+          counter.textContent = label + ' ' + (i + 1) + ' / ' + n;
+          if (t - t0 < total) requestAnimationFrame(frame); else finish(true);
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+    function resetDots() {
+      ALL.forEach(d => d.setAttribute('class', 'dot'));
+      CAND.forEach(d => d.setAttribute('class', 'dot'));
+      ROWS.forEach(r => { r.classList.remove('on'); r.querySelector('text').textContent = ''; });
+      c1.textContent = ''; c2.textContent = '';
+      c1.classList.remove('g'); c2.classList.remove('g');
+    }
+    function setQ() { qt.textContent = Q[qi].l1; qt2.textContent = Q[qi].l2; }
+
+    function buildSteps() {
+      const rand = rng(1234 + qi * 97);
+      const hit = pick(ALL.length, 50, rand);          // 1차 통과 50개 (전체 격자 인덱스)
+      const top = pick(50, 5, rand);                    // 2차 통과 5개 (후보 격자 인덱스)
+      const docIds = hit.map(i => '#' + (i + 1));
+      return [
+        {
+          st: '질문 임베딩',
+          sd: '질문을 정규식으로 정제한 뒤 벡터로 바꿉니다. 이제부터는 문장이 아니라 벡터끼리 비교합니다',
+          nodes: ['rag-q'], wires: ['rag-w1'], phases: [[[[130, 200], [160, 200]]]],
+          before() { resetDots(); setQ(); }
+        },
+        {
+          st: '1차 · Bi-Encoder — 전체 문서와 코사인 유사도 (빠르게 전부)',
+          sd: '질문 벡터와 문서 벡터의 각도만 재므로 전체를 빠르게 훑을 수 있습니다. 대신 미묘한 문맥 차이는 못 가릅니다',
+          nodes: [], wires: [],
+          phases: [{ run: mine => sweep(ALL, 9, c1, '코사인 유사도', mine) }],
+          after() {
+            const set = new Set(hit);
+            ALL.forEach((d, i) => d.classList.add(set.has(i) ? 'hit' : 'miss'));
+            c1.textContent = ALL.length + '건 중 상위 50건 통과'; c1.classList.add('g');
+          }
+        },
+        {
+          st: '후보 50건만 다음 단계로',
+          sd: '나머지는 여기서 버립니다. 정밀 비교는 이 50건에만 합니다',
+          nodes: [], wires: ['rag-w2'], phases: [[[[390, 200], [420, 200]]]],
+          after() { CAND.forEach(d => d.classList.add('hit')); }
+        },
+        {
+          st: '2차 · Cross-Encoder — 질문과 후보 50건을 쌍으로 정밀 비교 (느리지만 정확)',
+          sd: '질문과 문서를 한 쌍으로 넣어 관계를 직접 읽습니다. 건당 비용이 커서 전체에는 못 쓰고, 좁힌 50건에만 씁니다',
+          nodes: [], wires: [],
+          phases: [{ run: mine => sweep(CAND, 46, c2, 'Cross-Encoder', mine) }],
+          after() {
+            const set = new Set(top);
+            CAND.forEach((d, i) => { d.classList.remove('hit'); d.classList.add(set.has(i) ? 'top' : 'miss'); });
+            c2.textContent = '50건 재순위 → Top 5'; c2.classList.add('g');
+          }
+        },
+        {
+          st: 'Top 5만 추출',
+          sd: '순위가 매겨진 50건 중 위 5건만 남깁니다. 45건은 답변에 쓰지 않습니다',
+          nodes: [], wires: ['rag-w3'], phases: [[[[570, 200], [600, 200]]]],
+          after() {
+            top.forEach((ci, r) => { ROWS[r].classList.add('on'); ROWS[r].querySelector('text').textContent = (r + 1) + '위 · 문서 ' + docIds[ci]; });
+          }
+        },
+        {
+          st: '답변 생성 — Top 5 문서를 근거로',
+          sd: '질문과 Top 5 문서, 이전 대화를 함께 LLM에 넘겨 답변을 만듭니다. 근거가 5건뿐이라 답이 흐려지지 않습니다',
+          nodes: ['rag-llm'], wires: ['rag-w4'], phases: [[[[674, 246], [674, 270]]]],
+          after() { F.msg('rag-a1', '근거 5건으로 생성'); F.msg('rag-a2', '나머지 45건은 제외'); }
+        }
+      ];
+    }
+
+    function idle() { resetDots(); setQ(); F.idle(buildSteps()); }
+    const qb = [ROOT.querySelector('#rag-q0'), ROOT.querySelector('#rag-q1')];
+    qb.forEach((b, i) => b.addEventListener('click', () => { qi = i; qb.forEach((x, j) => x.setAttribute('aria-pressed', j === i ? 'true' : 'false')); idle(); }));
+    ROOT.querySelector('#rag-run').addEventListener('click', () => { resetDots(); F.play(buildSteps()); });
+    ROOT.querySelector('#rag-reset').addEventListener('click', idle);
+    idle();
+  })();
+</script>
 
 <section class="tile tile--light">
   <div class="wrap">
@@ -5364,7 +5647,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <span class="tag tag--s">Solution</span>
         <ul>
           <li>사용자 질문 중심 Embedding으로 Retrieval 구분력 향상</li>
-          <li>Bi-Encoder 탐색 + Cross-Encoder 재계산으로 응답 정확도 개선</li>
+          <li>Bi-Encoder 후보 50건 → Cross-Encoder Top 5 재순위로 응답 정확도 개선</li>
           <li>이전 대화를 컨텍스트로 유지해 대화 흐름을 반영한 응답 생성</li>
         </ul>
       </div>
