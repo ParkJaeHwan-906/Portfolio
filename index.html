@@ -1753,6 +1753,34 @@
   .vf #mq-root .slot .r{font-size:9.5px; font-weight:500;}
   .vf #pookie-demos h4.sec + p{color:var(--body-muted); font-size:15px; line-height:1.6; margin:0 0 8px;}
 
+  /* ---------- 시연 조작부 — ① 고르기 → ② 재생 ---------- */
+  .vf .demo-bar--steps{flex-direction:column; align-items:stretch; gap:12px;}
+  .vf .dstep{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
+  .vf .dnum{display:inline-flex; width:22px; height:22px; border-radius:9999px; background:var(--ink); color:var(--canvas); font-size:11px; font-weight:700; align-items:center; justify-content:center; flex:none;}
+  .vf .dlabel{font-size:14px; color:var(--body-muted); margin-right:6px; min-width:96px;}
+  .vf .demo-bar button.run{background:var(--ink); color:var(--canvas); border-color:transparent;}
+  .vf .demo-bar button.run:hover{background:var(--body);}
+  .vf .demo-bar button.next{font-weight:600;}
+  .vf .dhint{margin:0; font-size:12.5px; color:var(--body-muted); line-height:1.5;}
+
+  /* ---------- 단계 로그 → 셸 로그 ----------
+     설명 목록이 시연보다 커 보이지 않도록, 도달한 단계만 터미널처럼 한 줄씩 찍는다.
+     .seen 은 아래 관찰자 스크립트가 .on 을 보고 붙인다. 승리요정 시연에도 그대로 적용된다. */
+  .vf .stagewrap{padding:24px;}
+  .vf .stagelog{max-width:none; background:#0d0d0f; color:#d6d6dc; border-radius:10px; padding:14px 16px; font-family:var(--code); font-size:12.5px; line-height:1.55; letter-spacing:0; min-height:56px; max-height:280px; overflow:auto; counter-reset:stg;}
+  .vf .stagelog::before{content:"$ 대기 중 — 재생하면 처리 로그가 여기에 찍힙니다"; display:block; color:#6e6e76;}
+  .vf .stagelog:has(li.seen, li.on)::before{display:none;}
+  .vf .stagelog li{display:none; grid-template-columns:none; gap:0; padding:5px 0; border:0; opacity:1; transition:none;}
+  .vf .stagelog li.seen, .vf .stagelog li.on{display:block;}
+  .vf .stagelog li::before{display:inline; counter-increment:stg; content:"$ step " counter(stg) "  "; background:none; color:#6e6e76; padding:0; height:auto; border-radius:0; font:inherit; font-weight:600;}
+  .vf .stagelog li.on::before{background:none; color:var(--primary-on-dark, #2997ff);}
+  .vf .stagelog .st{display:inline; font:inherit; font-weight:600; letter-spacing:0; color:#e8e8ee;}
+  .vf .stagelog li.on .st::after{content:" ▍"; color:var(--primary-on-dark, #2997ff); animation:pk-blink 1s steps(1) infinite;}
+  .vf .stagelog .sd{display:block; margin:2px 0 0 0; padding-left:2ch; font:inherit; font-size:12px; letter-spacing:0; color:#8e8e96; text-indent:0;}
+  .vf .stagelog .sd::before{content:"# "; color:#5a5a62;}
+  @keyframes pk-blink{50%{opacity:0;}}
+  @media (prefers-reduced-motion:reduce){.vf .stagelog li.on .st::after{animation:none;}}
+
   /* ---------- Floating table of contents ---------- */
   /* The host page reads at 1120px, not the deep dive's original 980px, so the
      rail has to move further out — and only appears once there is room for it. */
@@ -4605,7 +4633,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <div class="wrap">
     <p class="sectlabel">Deep Dive</p>
     <h3 class="display-md">메시지 큐와 재접속 복구, 동작 그대로</h3>
-    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">왜 서버 메모리에 직접 큐를 두었는지, 그리고 그 큐와 히스토리가 실제로 어떻게 움직이는지 버튼을 눌러 따라가 볼 수 있습니다.</p>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">왜 서버 메모리에 직접 큐를 두었는지, 그리고 그 큐와 히스토리가 실제로 어떻게 움직이는지 한 단계씩 따라가 볼 수 있습니다.</p>
     <div class="ts" style="margin-top:32px">
       <div class="tscard">
         <span class="tag tag--c">제약</span>
@@ -4639,38 +4667,46 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <div class="vfwrap">
 
   <h4 class="sec" style="margin-top:0">시연 1 — Room 단위 Deque 메시지 큐</h4>
-  <p style="max-width:70ch">타이머·그리기·채팅 이벤트가 거의 동시에 발생하면, 같은 세션에 병렬로 보내는 대신 방의 큐에 줄을 세우고 틱마다 하나씩만 보냅니다. 전송 실패를 주입하면 재시도와 비정상 세션 판정까지 볼 수 있습니다.</p>
+  <p style="max-width:70ch">타이머·그리기·채팅 이벤트가 거의 동시에 발생하면, 같은 세션에 병렬로 보내는 대신 방의 큐에 줄을 세우고 틱마다 하나씩만 보냅니다. 큐는 왼쪽(뒤)으로 들어와 오른쪽(앞)에서 나갑니다.</p>
 
   <div class="demo flowdemo" id="mq-root">
-    <div class="demo-bar">
-      <label>시나리오</label>
-      <button type="button" class="opt" id="mq-ok" aria-pressed="true">정상 전송</button>
-      <button type="button" class="opt" id="mq-fail" aria-pressed="false">세션 B 전송 실패 주입</button>
-      <button type="button" id="mq-run">이벤트 3개 동시 발생</button>
+    <div class="demo-bar demo-bar--steps">
+      <div class="dstep">
+        <span class="dnum">1</span><span class="dlabel">시나리오 고르기</span>
+        <button type="button" class="opt" id="mq-ok" aria-pressed="true">정상 전송</button>
+        <button type="button" class="opt" id="mq-fail" aria-pressed="false">세션 B 전송 실패</button>
+      </div>
+      <div class="dstep">
+        <span class="dnum">2</span><span class="dlabel">재생</span>
+        <button type="button" class="ghost next" id="mq-next">다음 단계 →</button>
+        <button type="button" class="run" id="mq-run">▶ 처음부터 자동 재생</button>
+        <button type="button" class="ghost" id="mq-reset">처음으로</button>
+      </div>
+      <p class="dhint">「다음 단계 →」를 누르면 한 단계씩 진행되고, 「자동 재생」은 끝까지 천천히 이어서 보여줍니다.</p>
     </div>
 
     <div class="demo-pane">
       <h5>전달 경로 <span id="mq-progress">0 / 0</span></h5>
       <div class="fig-scroll">
         <svg id="mq-svg" viewBox="0 0 760 340" role="img"
-             aria-label="타이머·그리기·채팅 이벤트가 방의 Deque에 순서대로 쌓이고, 틱 스케줄러가 한 건씩 꺼내 세션 A·B·C에 전송한다. 실패한 메시지는 큐 맨 앞으로 돌아가 재시도되고, 같은 세션에 두 번 실패하면 비정상 세션으로 판단해 중단한다.">
+             aria-label="타이머·그리기·채팅 이벤트가 방의 Deque 뒤(왼쪽)로 들어와 앞(오른쪽)으로 이동하고, 틱 스케줄러가 앞에서 한 건씩 꺼내 세션 A·B·C에 전송한다. 실패한 메시지는 큐 맨 앞으로 돌아가 재시도되고, 같은 세션에 두 번 실패하면 비정상 세션으로 판단해 중단한다.">
           <defs>
             <marker id="mqm" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto">
               <polygon points="0,0 10,4 0,8" fill="currentColor"/></marker>
           </defs>
 
           <rect class="zonebox" x="184" y="112" width="236" height="116" rx="8"/>
-          <text class="wlabel" x="196" y="132">앞 · pollFirst</text>
-          <text class="wlabel" x="408" y="132" text-anchor="end">뒤 · offerLast</text>
-          <text class="wlabel" x="196" y="220">Room 큐 — ArrayDeque · 방마다 하나</text>
+          <text class="wlabel" x="196" y="134">뒤 · offerLast</text>
+          <text class="wlabel" x="408" y="134" text-anchor="end">앞 · pollFirst</text>
+          <text class="wlabel" x="196" y="218">Room 큐 — ArrayDeque · 방마다 하나</text>
 
           <polyline class="wire" id="mq-wt" points="132,64 160,64 160,170 184,170" marker-end="url(#mqm)"/>
           <line class="wire" id="mq-wd" x1="132" y1="170" x2="184" y2="170" marker-end="url(#mqm)"/>
           <polyline class="wire" id="mq-wc" points="132,276 160,276 160,170 184,170" marker-end="url(#mqm)"/>
           <line class="wire" id="mq-wq" x1="420" y1="170" x2="452" y2="170" marker-end="url(#mqm)"/>
-          <polyline class="wire" id="mq-wa" points="562,170 588,170 588,64 612,64" marker-end="url(#mqm)"/>
-          <line class="wire" id="mq-wb" x1="562" y1="170" x2="612" y2="170" marker-end="url(#mqm)"/>
-          <polyline class="wire" id="mq-wc2" points="562,170 588,170 588,276 612,276" marker-end="url(#mqm)"/>
+          <polyline class="wire" id="mq-wa" points="576,170 592,170 592,64 612,64" marker-end="url(#mqm)"/>
+          <line class="wire" id="mq-wb" x1="576" y1="170" x2="612" y2="170" marker-end="url(#mqm)"/>
+          <polyline class="wire" id="mq-wc2" points="576,170 592,170 592,276 612,276" marker-end="url(#mqm)"/>
 
           <g class="node" id="mq-timer">
             <rect x="12" y="36" width="120" height="56" rx="3"/>
@@ -4688,17 +4724,19 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
             <text class="nsub" x="24" y="288">CHAT</text>
           </g>
 
-          <g class="slot" id="mq-s0"><rect x="196" y="140" width="46" height="46" rx="6"/><text x="219" y="160" text-anchor="middle"></text><text class="r" x="219" y="176" text-anchor="middle"></text></g>
-          <g class="slot" id="mq-s1"><rect x="250" y="140" width="46" height="46" rx="6"/><text x="273" y="160" text-anchor="middle"></text><text class="r" x="273" y="176" text-anchor="middle"></text></g>
-          <g class="slot" id="mq-s2"><rect x="304" y="140" width="46" height="46" rx="6"/><text x="327" y="160" text-anchor="middle"></text><text class="r" x="327" y="176" text-anchor="middle"></text></g>
-          <g class="slot" id="mq-s3"><rect x="358" y="140" width="46" height="46" rx="6"/><text x="381" y="160" text-anchor="middle"></text><text class="r" x="381" y="176" text-anchor="middle"></text></g>
+          <!-- 슬롯은 오른쪽이 앞(0번). 들어온 메시지는 왼쪽에서 들어와 오른쪽으로 밀려간다. -->
+          <g class="slot" id="mq-s3"><rect x="196" y="147" width="46" height="46" rx="6"/><text x="219" y="167" text-anchor="middle"></text><text class="r" x="219" y="183" text-anchor="middle"></text></g>
+          <g class="slot" id="mq-s2"><rect x="250" y="147" width="46" height="46" rx="6"/><text x="273" y="167" text-anchor="middle"></text><text class="r" x="273" y="183" text-anchor="middle"></text></g>
+          <g class="slot" id="mq-s1"><rect x="304" y="147" width="46" height="46" rx="6"/><text x="327" y="167" text-anchor="middle"></text><text class="r" x="327" y="183" text-anchor="middle"></text></g>
+          <g class="slot" id="mq-s0"><rect x="358" y="147" width="46" height="46" rx="6"/><text x="381" y="167" text-anchor="middle"></text><text class="r" x="381" y="183" text-anchor="middle"></text></g>
 
           <g class="node" id="mq-tick">
-            <rect x="452" y="142" width="110" height="56" rx="3"/>
+            <rect x="452" y="142" width="124" height="56" rx="3"/>
             <text class="ntitle" x="464" y="164">Tick 스케줄러</text>
             <text class="nsub" x="464" y="182">고정 주기 · 1건/틱</text>
           </g>
-          <text class="sline" id="mq-st" x="452" y="246"></text>
+          <text class="sline" id="mq-qa" x="184" y="250"></text>
+          <text class="sline" id="mq-st" x="452" y="250"></text>
 
           <g class="node" id="mq-sa">
             <rect x="612" y="36" width="136" height="56" rx="3"/>
@@ -4720,7 +4758,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     </div>
 
     <div class="demo-pane stagewrap">
-      <h5>단계별 처리 내용</h5>
+      <h5>처리 로그</h5>
       <ol class="stagelog" id="mq-log"></ol>
     </div>
   </div>
@@ -4729,16 +4767,21 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <p style="max-width:70ch">클라이언트 연결이 비정상적으로 끊겨도 서버는 방의 상태와 히스토리를 그대로 들고 있습니다. 재접속하면 그 히스토리를 확인해 진행 중이던 방에 다시 배치하고, 플레이어는 게임을 이어갑니다.</p>
 
   <div class="demo flowdemo" id="rc-root">
-    <div class="demo-bar">
-      <label>플레이어 B의 연결</label>
-      <button type="button" id="rc-run">끊었다가 다시 붙이기</button>
+    <div class="demo-bar demo-bar--steps">
+      <div class="dstep">
+        <span class="dnum">1</span><span class="dlabel">재생</span>
+        <button type="button" class="ghost next" id="rc-next">다음 단계 →</button>
+        <button type="button" class="run" id="rc-run">▶ 처음부터 자동 재생</button>
+        <button type="button" class="ghost" id="rc-reset">처음으로</button>
+      </div>
+      <p class="dhint">플레이어 B의 연결을 끊었다가 다시 붙이는 7단계입니다. 「다음 단계 →」로 한 단계씩 넘겨 보세요.</p>
     </div>
 
     <div class="demo-pane">
       <h5>복구 경로 <span id="rc-progress">0 / 0</span></h5>
       <div class="fig-scroll">
         <svg id="rc-svg" viewBox="0 0 760 300" role="img"
-             aria-label="플레이어 B의 WebSocket 연결이 끊겨도 서버는 Room 상태와 히스토리를 유지한다. B가 재접속하면 서버가 히스토리를 확인해 현재 상태를 보내 주고 B는 게임을 이어간다.">
+             aria-label="플레이어 B의 WebSocket 연결이 끊겨도 서버는 Room 상태와 히스토리를 유지한다. B가 재접속하면 서버가 히스토리를 확인해 진행 중이던 방에 다시 배치하고 현재 상태를 보내 준다.">
           <defs>
             <marker id="rcm" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto">
               <polygon points="0,0 10,4 0,8" fill="currentColor"/></marker>
@@ -4750,7 +4793,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           <line class="wire" id="rc-w1" x1="148" y1="150" x2="268" y2="150" marker-end="url(#rcm)"/>
           <line class="wire" id="rc-w1r" x1="268" y1="164" x2="148" y2="164" marker-end="url(#rcm)"/>
           <line class="wire" id="rc-w2" x1="516" y1="150" x2="612" y2="150" marker-end="url(#rcm)"/>
-          <text class="wlabel" x="208" y="138" text-anchor="middle">WebSocket</text>
+          <text class="wlabel" id="rc-wl" x="208" y="138" text-anchor="middle">WebSocket</text>
           <text class="wlabel" x="564" y="138" text-anchor="middle">WebSocket</text>
 
           <g class="node" id="rc-b">
@@ -4764,7 +4807,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           <g class="node" id="rc-room">
             <rect x="280" y="44" width="224" height="60" rx="3"/>
             <text class="ntitle" x="292" y="66">Room 상태</text>
-            <text class="nsub" x="292" y="84">라운드 · 차례 · 점수 · 참가자</text>
+            <text class="nsub" id="rc-rs" x="292" y="84">라운드 · 차례 · 점수 · 참가자</text>
           </g>
           <g class="node" id="rc-hist">
             <rect x="280" y="114" width="224" height="60" rx="3"/>
@@ -4789,7 +4832,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     </div>
 
     <div class="demo-pane stagewrap">
-      <h5>단계별 처리 내용</h5>
+      <h5>처리 로그</h5>
       <ol class="stagelog" id="rc-log"></ol>
     </div>
   </div>
@@ -4801,13 +4844,16 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   // ── POOKIE 시연 공용 엔진 ─────────────────────────────────────────────
   // 승리요정 채팅 시연과 같은 방식이다. 노드 강조·와이어 점등·점 이동을
   // 단계 배열로 기술하고, 단계마다 로그 한 줄을 켠다.
+  // 자동 재생(play)과 한 단계씩(step) 두 가지로 돌릴 수 있다.
   window.pkFlow = function (ROOT, svgId, logId, progId) {
     const svg = ROOT.querySelector('#' + svgId);
     const log = ROOT.querySelector('#' + logId);
     const prog = ROOT.querySelector('#' + progId);
     const NS = 'http://www.w3.org/2000/svg';
     const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const DUR = 1100;   // 점 하나가 한 구간을 지나는 시간 — 눈으로 따라갈 수 있게 느리게
     let runId = 0;
+    let session = null; // 단계 모드 진행 상태 { steps, items, i, busy, mine }
 
     function clearMarks() {
       svg.querySelectorAll('.vfdot, .halo').forEach(d => d.remove());
@@ -4869,38 +4915,77 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     const settle = () => svg.querySelectorAll('.node.on').forEach(n => { n.classList.remove('on'); n.classList.add('done'); });
     const msg = (id, text) => { const t = svg.querySelector('#' + id); if (t) t.textContent = text; };
 
-    // 단계 배열을 순서대로 재생한다. 단계는 { st, sd, nodes, wires, phases:[legs...], before(), after() }
-    async function play(steps) {
-      const mine = ++runId;
-      clearMarks();
-      renderLog(steps);
-      const items = [...log.querySelectorAll('li')];
-      const dur = still.matches ? 0 : 480;
-      for (let i = 0; i < steps.length; i++) {
-        if (mine !== runId) return;
-        const s = steps[i];
-        settle();
-        if (s.before) s.before();
-        on(s.nodes || []);
-        on(s.wires || [], 'lit');
-        items[i].classList.add('on');
-        prog.textContent = (i + 1) + ' / ' + steps.length;
-        for (const legs of (s.phases || [])) {
-          await Promise.all(legs.map(l => animateLeg(l, dur, mine)));
-          if (mine !== runId) return;
-        }
-        if (s.after) s.after();
-        if (dur) await wait(s.hold || 260, mine);
+    // 단계 하나를 실행한다. 단계는 { st, sd, nodes, wires, phases, before(), after(), hold }
+    // phases 의 원소는 legs 배열이거나 { legs, after() } 객체다. 원소끼리는 순서대로,
+    // 한 원소 안의 legs 는 동시에 움직인다.
+    async function runStep(s, i, items, mine) {
+      const dur = still.matches ? 0 : DUR;
+      settle();
+      if (s.before) s.before();
+      on(s.nodes || []);
+      on(s.wires || [], 'lit');
+      items.forEach((li, j) => li.classList.toggle('on', j === i));
+      prog.textContent = (i + 1) + ' / ' + items.length;
+      for (const ph of (s.phases || [])) {
+        const legs = Array.isArray(ph) ? ph : ph.legs;
+        await Promise.all(legs.map(l => animateLeg(l, dur, mine)));
+        if (mine !== runId) return false;
+        if (!Array.isArray(ph) && ph.after) ph.after();
+        if (dur && legs.length) await wait(160, mine);
       }
-      if (mine !== runId) return;
+      if (s.after) s.after();
+      return mine === runId;
+    }
+
+    function finishRun(items) {
+      // 끝났으면 강조를 모두 내린다. 남는 것은 진행 표시와 도착한 메시지, 상태 표시뿐이다.
       svg.querySelectorAll('.node').forEach(n => n.classList.remove('on', 'done'));
       svg.querySelectorAll('.wire').forEach(w => w.classList.remove('lit'));
       items.forEach(li => li.classList.remove('on'));
     }
 
-    function idle(steps) { runId++; clearMarks(); renderLog(steps); }
+    function begin(steps) {
+      const mine = ++runId;
+      clearMarks();
+      renderLog(steps);
+      session = { steps, items: [...log.querySelectorAll('li')], i: 0, busy: false, mine };
+      return session;
+    }
 
-    return { svg, play, idle, on, off, msg, get runId() { return runId; } };
+    async function play(steps) {
+      const S = begin(steps);
+      const dur = still.matches ? 0 : DUR;
+      for (let i = 0; i < steps.length; i++) {
+        if (S.mine !== runId) return;
+        const ok = await runStep(steps[i], i, S.items, S.mine);
+        if (!ok) return;
+        if (dur) await wait(steps[i].hold || 900, S.mine);
+      }
+      if (S.mine !== runId) return;
+      S.i = steps.length;
+      finishRun(S.items);
+    }
+
+    // 한 단계씩. 세션이 없거나 끝났으면 새로 시작해 첫 단계를 보여준다.
+    async function step(steps) {
+      if (!session || session.mine !== runId || session.i >= session.steps.length) begin(steps);
+      const S = session;
+      if (S.busy) return;
+      S.busy = true;
+      const ok = await runStep(S.steps[S.i], S.i, S.items, S.mine);
+      S.busy = false;
+      if (!ok) return;
+      S.i += 1;
+      // 마지막 단계까지 봤으면 강조를 내리되, 로그의 마지막 줄은 켜 둔다
+      if (S.i >= S.steps.length) {
+        finishRun(S.items);
+        S.items[S.items.length - 1].classList.add('on');
+      }
+    }
+
+    function idle(steps) { runId++; session = null; clearMarks(); renderLog(steps); }
+
+    return { svg, play, step, idle, on, off, msg, get runId() { return runId; } };
   };
 </script>
 
@@ -4910,7 +4995,8 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     const ROOT = document.getElementById('mq-root');
     if (!ROOT) return;
     const F = window.pkFlow(ROOT, 'mq-svg', 'mq-log', 'mq-progress');
-    const slots = [0, 1, 2, 3].map(i => ROOT.querySelector('#mq-s' + i));
+    const slots = [0, 1, 2, 3].map(i => ROOT.querySelector('#mq-s' + i)); // 0 = 앞(오른쪽)
+    const qaLine = ROOT.querySelector('#mq-qa');
     const stLine = ROOT.querySelector('#mq-st');
     let failMode = false;
     let q = [];
@@ -4925,101 +5011,108 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         g.classList.toggle('front', !!it && i === 0);
       });
     }
-    function status(text, bad) {
-      stLine.textContent = text || '';
-      stLine.classList.toggle('x', !!bad);
-    }
+    function qact(text) { qaLine.textContent = text || ''; }
+    function status(text, bad) { stLine.textContent = text || ''; stLine.classList.toggle('x', !!bad); }
 
-    const IN = [[[132, 64], [160, 64], [160, 170], [184, 170]], [[132, 170], [184, 170]], [[132, 276], [160, 276], [160, 170], [184, 170]]];
-    const Q2T = [[[420, 170], [452, 170]]];
-    const TA = [[562, 170], [588, 170], [588, 64], [612, 64]];
-    const TB = [[562, 170], [612, 170]];
-    const TC = [[562, 170], [588, 170], [588, 276], [612, 276]];
-    const BACK = [[[452, 170], [420, 170], [219, 170]]];
+    // 슬롯 중심 x — 0번(앞)이 Tick 바로 옆이다
+    const SX = [381, 327, 273, 219];
+    const ENTRY = [184, 170];
+    const entryFrom = {
+      timer: [[132, 64], [160, 64], [160, 170]],
+      draw: [[132, 170]],
+      chat: [[132, 276], [160, 276], [160, 170]]
+    };
+    // 들어온 메시지는 왼쪽에서 들어와 비어 있는 가장 앞 칸까지 밀려간다
+    const enqueueLeg = (from, idx) => [...entryFrom[from], ENTRY, [SX[idx], 170]];
+    const Q2T = [[[SX[0], 170], [452, 170]]];
+    const TA = [[576, 170], [592, 170], [592, 64], [612, 64]];
+    const TB = [[576, 170], [612, 170]];
+    const TC = [[576, 170], [592, 170], [592, 276], [612, 276]];
+    const BACK = [[[452, 170], [SX[0], 170]]];
 
+    function push(label, retry) { q.push({ label, retry }); renderQ(); }
     function pop() { const it = q.shift(); renderQ(); return it; }
 
     function buildSteps() {
       const steps = [];
       steps.push({
-        st: '세 이벤트가 거의 동시에 발생',
-        sd: '타이머 스케줄러 · 그리기 좌표 · 채팅이 각자의 스레드에서 같은 방으로 들어옵니다. 바로 세션에 쓰면 송신 채널이 겹칩니다',
-        nodes: ['mq-timer', 'mq-draw', 'mq-chat'], wires: ['mq-wt', 'mq-wd', 'mq-wc'], phases: [IN],
-        before() { q = []; renderQ(); status(''); },
-        after() { q = [{ label: 'TIMER' }, { label: 'DRAW' }, { label: 'CHAT' }]; renderQ(); }
+        st: '세 이벤트가 거의 동시에 발생 — 도착 순서대로 뒤에 붙음 (offerLast)',
+        sd: '타이머 → 그리기 → 채팅 순으로 방에 들어옵니다. 각 메시지는 큐 왼쪽(뒤)으로 들어와 비어 있는 가장 앞 칸까지 밀려갑니다. 바로 세션에 쓰면 송신 채널이 겹치므로 여기서 줄을 세웁니다',
+        nodes: ['mq-timer', 'mq-draw', 'mq-chat'], wires: ['mq-wt', 'mq-wd', 'mq-wc'],
+        phases: [
+          { legs: [enqueueLeg('timer', 0)], after() { push('TIMER'); qact('offerLast ← TIMER'); } },
+          { legs: [enqueueLeg('draw', 1)], after() { push('DRAW'); qact('offerLast ← DRAW'); } },
+          { legs: [enqueueLeg('chat', 2)], after() { push('CHAT'); qact('offerLast ← CHAT'); } }
+        ],
+        before() { q = []; renderQ(); qact(''); status(''); }
       });
       steps.push({
-        st: 'Room 큐에 offerLast — 방 단위로 직렬화',
-        sd: '들어온 순서대로 방의 Deque 뒤에 붙습니다. 다른 방의 큐와는 완전히 독립이라 한 방이 밀려도 다른 방은 영향이 없습니다',
-        nodes: [], wires: [], phases: [], hold: 520
+        st: '큐 완성 — 앞(오른쪽)이 먼저 나갑니다',
+        sd: '파란 칸이 맨 앞입니다. Tick 스케줄러는 항상 이 칸에서만 꺼냅니다. 다른 방의 큐와는 완전히 독립이라 한 방이 밀려도 다른 방은 영향이 없습니다',
+        nodes: ['mq-tick'], wires: [], phases: [], hold: 1400,
+        after() { qact('앞: ' + (q[0] ? q[0].label : '') + ' · 뒤: ' + (q[q.length - 1] ? q[q.length - 1].label : '')); }
       });
-      steps.push({
-        st: '틱 1 — pollFirst → TIMER 브로드캐스트',
-        sd: '고정 주기 틱마다 맨 앞 한 건만 꺼냅니다. 한 틱에 한 건이므로 같은 세션에 병렬 전송이 생길 수 없습니다',
+      const tickAll = (label, title, sd) => ({
+        st: title,
+        sd: sd,
         nodes: ['mq-tick', 'mq-sa', 'mq-sb', 'mq-sc'], wires: ['mq-wq', 'mq-wa', 'mq-wb', 'mq-wc2'],
-        phases: [Q2T, [TA, TB, TC]],
-        before() { pop(); },
-        after() { F.msg('mq-ma', 'TIMER'); F.msg('mq-mb', 'TIMER'); F.msg('mq-mc', 'TIMER'); }
+        phases: [
+          { legs: Q2T, after() { pop(); qact('pollFirst → ' + label); } },
+          { legs: [TA, TB, TC], after() { F.msg('mq-ma', label); F.msg('mq-mb', label); F.msg('mq-mc', label); } }
+        ]
       });
+      steps.push(tickAll('TIMER', '틱 1 — 앞에서 TIMER를 꺼내 브로드캐스트 (pollFirst)',
+        '고정 주기 틱마다 맨 앞 한 건만 꺼냅니다. 한 틱에 한 건이므로 같은 세션에 병렬 전송이 생길 수 없습니다. 나머지는 한 칸씩 앞으로 당겨집니다'));
       if (!failMode) {
-        steps.push({
-          st: '틱 2 — DRAW 브로드캐스트',
-          sd: '큐가 왼쪽으로 한 칸 당겨지고 다음 한 건이 나갑니다. 순서는 들어온 그대로입니다',
-          nodes: ['mq-tick', 'mq-sa', 'mq-sb', 'mq-sc'], wires: ['mq-wq', 'mq-wa', 'mq-wb', 'mq-wc2'],
-          phases: [Q2T, [TA, TB, TC]],
-          before() { pop(); },
-          after() { F.msg('mq-ma', 'DRAW'); F.msg('mq-mb', 'DRAW'); F.msg('mq-mc', 'DRAW'); }
-        });
-        steps.push({
-          st: '틱 3 — CHAT 브로드캐스트 · 큐 비움',
-          sd: '세 이벤트가 충돌 없이 같은 순서로 세 세션에 도착했습니다. 게임 상태가 모든 클라이언트에서 같습니다',
-          nodes: ['mq-tick', 'mq-sa', 'mq-sb', 'mq-sc'], wires: ['mq-wq', 'mq-wa', 'mq-wb', 'mq-wc2'],
-          phases: [Q2T, [TA, TB, TC]],
-          before() { pop(); },
-          after() { F.msg('mq-ma', 'CHAT'); F.msg('mq-mb', 'CHAT'); F.msg('mq-mc', 'CHAT'); }
-        });
+        steps.push(tickAll('DRAW', '틱 2 — DRAW 브로드캐스트',
+          '다음 틱, 다음 한 건. 순서는 들어온 그대로입니다'));
+        steps.push(tickAll('CHAT', '틱 3 — CHAT 브로드캐스트 · 큐 비움',
+          '세 이벤트가 충돌 없이 같은 순서로 세 세션에 도착했습니다. 게임 상태가 모든 클라이언트에서 같습니다'));
       } else {
         steps.push({
           st: '틱 2 — DRAW 전송 중 세션 B 실패',
           sd: 'A·C에는 닿았지만 B로 쓰는 순간 예외가 납니다. 이 메시지는 아직 끝난 것이 아닙니다',
           nodes: ['mq-tick', 'mq-sa', 'mq-sc'], wires: ['mq-wq', 'mq-wa', 'mq-wb', 'mq-wc2'],
-          phases: [Q2T, [TA, TB, TC]],
-          before() { pop(); },
-          after() { F.msg('mq-ma', 'DRAW'); F.msg('mq-mc', 'DRAW'); F.on(['mq-sb'], 'bad'); F.msg('mq-mb', '전송 실패'); }
+          phases: [
+            { legs: Q2T, after() { pop(); qact('pollFirst → DRAW'); } },
+            { legs: [TA, TB, TC], after() { F.msg('mq-ma', 'DRAW'); F.msg('mq-mc', 'DRAW'); F.on(['mq-sb'], 'bad'); F.msg('mq-mb', '전송 실패'); status('세션 B 전송 실패 (1회)', true); } }
+          ]
         });
         steps.push({
-          st: 'retryCount 1 → offerFirst — 큐 맨 앞으로',
-          sd: '세션이 아직 열려 있으면 메시지에 retryCount를 올려 Deque 맨 앞에 되돌립니다. 뒤에 줄 선 CHAT보다 먼저, 다음 틱에 바로 다시 나갑니다',
-          nodes: ['mq-tick'], wires: ['mq-wq'], phases: [BACK],
-          after() { q.unshift({ label: 'DRAW', retry: 1 }); renderQ(); status('retryCount 1 · 재시도 예약'); }
+          st: 'retryCount 1 → offerFirst — 큐 맨 앞으로 되돌림',
+          sd: '세션이 아직 열려 있으면 메시지의 retryCount를 올려 Deque 맨 앞(파란 칸)에 되돌립니다. 뒤에 줄 선 CHAT보다 먼저, 다음 틱에 바로 다시 나갑니다',
+          nodes: ['mq-tick'], wires: ['mq-wq'],
+          phases: [{ legs: BACK, after() { q.unshift({ label: 'DRAW', retry: 1 }); renderQ(); qact('offerFirst ← DRAW (retry 1)'); status('retryCount 1 · 다음 틱에 재시도'); } }]
         });
         steps.push({
           st: '틱 3 — DRAW 재시도, 세션 B 또 실패',
           sd: '같은 세션에 두 번째 실패입니다',
-          nodes: ['mq-tick'], wires: ['mq-wq', 'mq-wb'], phases: [Q2T, [TB]],
-          before() { pop(); },
-          after() { F.on(['mq-sb'], 'bad'); F.msg('mq-mb', '전송 실패 2회'); }
+          nodes: ['mq-tick'], wires: ['mq-wq', 'mq-wb'],
+          phases: [
+            { legs: Q2T, after() { pop(); qact('pollFirst → DRAW (retry 1)'); } },
+            { legs: [TB], after() { F.on(['mq-sb'], 'bad'); F.msg('mq-mb', '전송 실패 2회'); status('세션 B 전송 실패 (2회)', true); } }
+          ]
         });
         steps.push({
           st: 'retryCount 2 → 비정상 세션 판단, 재시도 중단',
           sd: '같은 세션에 2회 이상 실패하면 비정상 세션으로 보고 더 이상 재시도하지 않습니다. 죽은 세션 하나가 방 전체의 큐를 막지 못하게 하는 장치입니다',
-          nodes: [], wires: [], phases: [], hold: 640,
-          after() { status('retryCount 2 · 세션 B 비정상 → 중단', true); }
+          nodes: [], wires: [], phases: [], hold: 1400,
+          after() { qact('DRAW 폐기 · 큐에 되돌리지 않음'); status('retryCount 2 · 세션 B 비정상 → 중단', true); }
         });
         steps.push({
           st: '틱 4 — CHAT 브로드캐스트 · 나머지 세션은 정상 진행',
-          sd: 'A·C는 그대로 게임을 이어갑니다. B는 재접속하면 히스토리로 따라잡습니다 (시연 2)',
+          sd: 'A·C는 그대로 게임을 이어갑니다. B는 재접속하면 히스토리로 방에 재배치됩니다 (시연 2)',
           nodes: ['mq-tick', 'mq-sa', 'mq-sc'], wires: ['mq-wq', 'mq-wa', 'mq-wc2'],
-          phases: [Q2T, [TA, TC]],
-          before() { pop(); },
-          after() { F.msg('mq-ma', 'CHAT'); F.msg('mq-mc', 'CHAT'); }
+          phases: [
+            { legs: Q2T, after() { pop(); qact('pollFirst → CHAT'); } },
+            { legs: [TA, TC], after() { F.msg('mq-ma', 'CHAT'); F.msg('mq-mc', 'CHAT'); } }
+          ]
         });
       }
       return steps;
     }
 
-    function idle() { q = []; renderQ(); status(''); F.idle(buildSteps()); }
-    function run() { F.play(buildSteps()); }
+    function idle() { q = []; renderQ(); qact(''); status(''); F.idle(buildSteps()); }
 
     const okBtn = ROOT.querySelector('#mq-ok'), failBtn = ROOT.querySelector('#mq-fail');
     function setMode(f) {
@@ -5030,7 +5123,9 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     }
     okBtn.addEventListener('click', () => setMode(false));
     failBtn.addEventListener('click', () => setMode(true));
-    ROOT.querySelector('#mq-run').addEventListener('click', run);
+    ROOT.querySelector('#mq-run').addEventListener('click', () => { q = []; renderQ(); qact(''); status(''); F.play(buildSteps()); });
+    ROOT.querySelector('#mq-next').addEventListener('click', () => F.step(buildSteps()));
+    ROOT.querySelector('#mq-reset').addEventListener('click', idle);
     idle();
   })();
 </script>
@@ -5042,10 +5137,18 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     if (!ROOT) return;
     const F = window.pkFlow(ROOT, 'rc-svg', 'rc-log', 'rc-progress');
     const hs = ROOT.querySelector('#rc-hs');
+    const rs = ROOT.querySelector('#rc-rs');
+    const wl = ROOT.querySelector('#rc-wl');
 
     const B2S = [[[148, 150], [268, 150]]];
     const S2O = [[[516, 150], [612, 150]]];
     const S2B = [[[268, 164], [148, 164]]];
+
+    function resetTexts() {
+      hs.textContent = '방에서 일어난 이벤트 기록';
+      rs.textContent = '라운드 · 차례 · 점수 · 참가자';
+      wl.textContent = 'WebSocket';
+    }
 
     function steps() {
       return [
@@ -5053,38 +5156,38 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           st: '게임 진행 중 — B의 이벤트가 히스토리에 기록',
           sd: 'B가 보낸 그리기 이벤트를 서버가 받아 방의 히스토리에 남기고 Room 상태를 갱신합니다',
           nodes: ['rc-b', 'rc-hist', 'rc-room'], wires: ['rc-w1'], phases: [B2S],
-          before() { hs.textContent = '방에서 일어난 이벤트 기록'; F.msg('rc-mb', '라운드 2 · 그리는 중'); },
-          after() { hs.textContent = '이벤트 12건 기록'; }
+          before() { resetTexts(); F.msg('rc-mb', '라운드 2 · 그리는 중'); },
+          after() { hs.textContent = '이벤트 기록 중 (B 포함)'; rs.textContent = '라운드 2 · 참가자 A·B·C'; }
         },
         {
           st: '큐를 거쳐 A·C에 브로드캐스트',
           sd: '서버가 상태의 단일 기준입니다. 클라이언트끼리 직접 주고받지 않습니다',
           nodes: ['rc-mq', 'rc-o'], wires: ['rc-w2'], phases: [S2O],
-          after() { F.msg('rc-mo', '라운드 2 · 동일 화면'); }
+          after() { F.msg('rc-mo', '라운드 2 · 같은 화면'); }
         },
         {
           st: 'B의 연결이 비정상 종료',
           sd: '네트워크 끊김·탭 종료 등으로 WebSocket이 닫힙니다. B의 화면은 멈춥니다',
-          nodes: [], wires: [], phases: [], hold: 640,
-          after() { F.on(['rc-b'], 'bad'); F.on(['rc-w1'], 'dim'); F.msg('rc-mb', '연결 끊김'); F.msg('rc-mb2', ''); }
+          nodes: [], wires: [], phases: [], hold: 1400,
+          after() { F.on(['rc-b'], 'bad'); F.on(['rc-w1'], 'dim'); wl.textContent = '연결 끊김'; F.msg('rc-mb', '연결 끊김'); F.msg('rc-mb2', ''); }
         },
         {
           st: '서버는 방을 유지 — 게임은 계속',
           sd: 'Room 상태와 히스토리는 서버 메모리에 그대로 남아 있습니다. A·C의 이벤트도 계속 기록됩니다',
           nodes: ['rc-room', 'rc-hist', 'rc-mq', 'rc-o'], wires: ['rc-w2'], phases: [S2O],
-          after() { hs.textContent = '이벤트 19건 기록 (B 부재 중 +7)'; F.msg('rc-mo', '라운드 2 → 3 진행'); }
+          after() { hs.textContent = 'B 부재 중에도 계속 기록'; rs.textContent = '라운드 3 · B 자리 유지'; F.msg('rc-mo', '라운드 2 → 3 진행'); }
         },
         {
           st: 'B 재접속 — 진행 중이던 방에 재배치',
           sd: '클라이언트가 다시 연결합니다. 서버는 히스토리에서 이 사용자가 진행 중이던 방을 찾아 그 방에 다시 배치합니다',
           nodes: ['rc-b', 'rc-room'], wires: ['rc-w1'], phases: [B2S],
-          before() { F.off(['rc-b'], 'bad'); F.off(['rc-w1'], 'dim'); F.msg('rc-mb', '재접속'); }
+          before() { F.off(['rc-b'], 'bad'); F.off(['rc-w1'], 'dim'); wl.textContent = 'WebSocket (새 연결)'; F.msg('rc-mb', '재접속'); }
         },
         {
           st: '히스토리 확인 — 빠진 동안의 이벤트를 추림',
           sd: 'B가 없던 사이의 기록을 히스토리에서 확인해 현재 라운드·차례·점수와 함께 복구 데이터를 만듭니다',
-          nodes: ['rc-hist', 'rc-room'], wires: [], phases: [], hold: 640,
-          after() { hs.textContent = 'B 부재 중 이벤트 7건 추출'; }
+          nodes: ['rc-hist', 'rc-room'], wires: [], phases: [], hold: 1400,
+          after() { hs.textContent = 'B 부재 중 이벤트만 추출'; }
         },
         {
           st: '현재 상태 전송 — B가 게임을 이어감',
@@ -5095,8 +5198,10 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       ];
     }
 
-    function idle() { hs.textContent = '방에서 일어난 이벤트 기록'; F.idle(steps()); }
-    ROOT.querySelector('#rc-run').addEventListener('click', () => F.play(steps()));
+    function idle() { resetTexts(); F.idle(steps()); }
+    ROOT.querySelector('#rc-run').addEventListener('click', () => { resetTexts(); F.play(steps()); });
+    ROOT.querySelector('#rc-next').addEventListener('click', () => F.step(steps()));
+    ROOT.querySelector('#rc-reset').addEventListener('click', idle);
     idle();
   })();
 </script>
@@ -7071,6 +7176,30 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     const visible = [...document.querySelectorAll('.vf [role="tabpanel"]')].find(p => !p.hidden);
     if (visible) build(visible);
     place();
+  })();
+</script>
+<script>
+  // ── 단계 로그를 셸처럼 — 도달한 줄만 남긴다 ──────────────────────
+  // 각 시연은 현재 단계 li 에 .on 만 붙인다. 여기서 .on 이 붙는 순간 그 줄과
+  // 앞선 줄에 .seen 을 남겨, 재생이 끝나 .on 이 내려가도 로그가 그대로 남게 한다.
+  // 첫 줄에 .on 이 붙으면 새 재생이므로 이전 로그를 비운다.
+  (function () {
+    document.querySelectorAll('.vf .stagelog').forEach(list => {
+      const mo = new MutationObserver(muts => {
+        muts.forEach(m => {
+          const li = m.target;
+          if (!(li instanceof HTMLLIElement) || !li.classList.contains('on')) return;
+          // 방금 .on 이 새로 붙은 경우만 본다. 우리가 .seen 을 쓰면서 생기는 변경은 건너뛴다
+          if ((m.oldValue || '').split(/\s+/).includes('on')) return;
+          const items = Array.from(list.children);
+          const i = items.indexOf(li);
+          if (i === 0) items.forEach(x => { if (x.classList.contains('seen')) x.classList.remove('seen'); });
+          for (let k = 0; k <= i; k++) if (!items[k].classList.contains('seen')) items[k].classList.add('seen');
+          list.scrollTop = list.scrollHeight;
+        });
+      });
+      mo.observe(list, { attributes: true, attributeOldValue: true, attributeFilter: ['class'], subtree: true });
+    });
   })();
 </script>
 </body>
