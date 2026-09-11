@@ -5836,7 +5836,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   //   자세    : 인라이어로 프레임 간 이동을 추정해 누적, 평균 이동 1.5px 미만이면 정지
   //   재추출  : 살아남은 추적점 60개 미만이면 새 특징점 추가, 실패 시 전체 재추출
   // 3D 자세(Essential Matrix)는 시연에서 2D 평면 이동(이동·회전·배율)으로 단순화했다.
-  // 같은 프레임에 필터 있는 추적기(A)와 없는 추적기(B)를 함께 돌려 마커 편차를 잰다.
+  // 같은 프레임에 필터 있는 추적기(A)와, '단일 스케일 LK + 벡터 단순 평균' 단순 추적기(B)를 함께 돌려 마커 편차를 잰다.
   (function () {
     const ROOT = document.getElementById('ar-root');
     if (!ROOT) return;
@@ -5957,11 +5957,36 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       }
       return { pts: out, st, err };
     }
-    // 필터 있음: FB 신뢰도 상위 95% + LK 오차 중앙값×3 + |flow| > 평균+1.5σ · 필터 없음: 순방향 상태만
+    // 단순 추적기용 LK — 피라미드 없이 원본 해상도 한 단계만, 수렴 여부·창 이탈을 확인하지 않는다.
+    // 빠른 이동에서는 벡터가 작게 잡히거나 엉뚱한 곳에 붙는다. 그 오차가 그대로 평균에 들어간다.
+    function lkNaive(A, B, pts) {
+      const n = pts.length, out = new Array(n);
+      for (let k = 0; k < n; k++) {
+        const px = pts[k][0], py = pts[k][1];
+        let vx = 0, vy = 0;
+        if (px - WIN >= 1 && py - WIN >= 1 && px + WIN < A.w - 2 && py + WIN < A.h - 2) {
+          let a11 = 0, a12 = 0, a22 = 0;
+          for (let dy = -WIN; dy <= WIN; dy++) for (let dx = -WIN; dx <= WIN; dx++) { const ix = bil(A.gx, A.w, px + dx, py + dy), iy = bil(A.gy, A.w, px + dx, py + dy); a11 += ix * ix; a12 += ix * iy; a22 += iy * iy; }
+          const det = a11 * a22 - a12 * a12;
+          if (det > 1e-4) for (let it = 0; it < ITERS; it++) {
+            const qx = px + vx, qy = py + vy;
+            if (qx - WIN < 1 || qy - WIN < 1 || qx + WIN >= B.w - 2 || qy + WIN >= B.h - 2) break;
+            let b1 = 0, b2 = 0;
+            for (let dy = -WIN; dy <= WIN; dy++) for (let dx = -WIN; dx <= WIN; dx++) { const it2 = bil(B.img, B.w, qx + dx, qy + dy) - bil(A.img, A.w, px + dx, py + dy); b1 += bil(A.gx, A.w, px + dx, py + dy) * it2; b2 += bil(A.gy, A.w, px + dx, py + dy) * it2; }
+            const dvx = -(a22 * b1 - a12 * b2) / det, dvy = -(-a12 * b1 + a11 * b2) / det;
+            vx += dvx; vy += dvy;
+            if (Math.abs(dvx) < EPS && Math.abs(dvy) < EPS) break;
+          }
+        }
+        out[k] = [px + vx, py + vy];
+      }
+      return out;
+    }
+    // 필터 있음: FB 신뢰도 상위 95% + LK 오차 중앙값×3 + |flow| > 평균+1.5σ · 필터 없음: 단일 스케일 LK, 상태 확인 없음
     function trackFeatures(PA, PB, pts, filters) {
-      const fwd = lk(PA, PB, pts);
       const n = pts.length, keep = new Uint8Array(n), reason = new Uint8Array(n); // 0 ok, 1 status, 2 fb, 3 err, 4 large
-      if (!filters) { for (let i = 0; i < n; i++) { keep[i] = fwd.st[i]; reason[i] = keep[i] ? 0 : 1; } return { next: fwd.pts, keep, reason }; }
+      if (!filters) { const nx = lkNaive(PA[0], PB[0], pts); for (let i = 0; i < n; i++) { keep[i] = 1; reason[i] = 0; } return { next: nx, keep, reason }; }
+      const fwd = lk(PA, PB, pts);
       const bwd = lk(PB, PA, fwd.pts);
       for (let i = 0; i < n; i++) { keep[i] = fwd.st[i] && bwd.st[i] ? 1 : 0; reason[i] = keep[i] ? 0 : 1; }
       const conf = [];
@@ -6015,7 +6040,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     // ── 5. 추적기 둘 (A: 필터 있음, B: 필터 없음) ─────────────────
     const MIN_TRACKS = 60, STATIC_FLOW = 1.5;
     const mkTracker = filters => ({ filters, prevP: null, pts: [], pose: T.I(), last: null, lost: 0, rr: rng(99) });
-    const S = { f: 0, A: mkTracker(true), B: mkTracker(false), marker: null, view: 'marker', dev: 0, last: null };
+    const S = { f: 0, A: mkTracker(true), B: mkTracker(false), marker: null, view: 'marker', dev: 0, last: null, trail: [] };
     let liveHandle = 0;
 
     function placeMarker(sx, sy) {
@@ -6027,14 +6052,27 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 
     function trackStep(tr, P, f) {
       const res = { f, status: 'init', feats: tr.pts, track: null, ransac: null };
-      if (!tr.prevP) { tr.pts = extractFeatures(P[0]); res.feats = tr.pts; tr.prevP = P; tr.last = res; return res; }
+      if (!tr.prevP) { tr.pts = extractFeatures(P[0]); if (!tr.filters) tr.pts = tr.pts.filter((_, i) => i % 3 === 0); res.feats = tr.pts; tr.prevP = P; tr.last = res; return res; }
+      if (!tr.filters) {
+        // 단순 추적(트러블슈팅의 '드리프트' 원인 재현): 단일 스케일 LK 결과를 그대로 믿고, 모든 벡터의 단순 평균만큼 마커를 옮긴다.
+        // 왕복 검사·이상치 제거·RANSAC·정지 판정·재추출이 없다. 잘못 추적된 점과 한쪽에 몰린 점이 평균을 끌고 간다.
+        const t = trackFeatures(tr.prevP, P, tr.pts, false);
+        const idx = []; for (let i = 0; i < tr.pts.length; i++) if (t.keep[i]) idx.push(i);
+        res.track = { prev: tr.pts, next: t.next, keep: t.keep, reason: t.reason, idx };
+        if (idx.length >= 5) {
+          let mx = 0, my = 0; for (const i of idx) { mx += t.next[i][0] - tr.pts[i][0]; my += t.next[i][1] - tr.pts[i][1]; } mx /= idx.length; my /= idx.length;
+          tr.pose = T.compose({ a: 1, b: 0, tx: mx, ty: my }, tr.pose);
+          tr.pts = idx.map(i => t.next[i]); res.feats = tr.pts; tr.prevP = P; res.status = 'ok'; tr.last = res; return res;
+        }
+        tr.lost++; tr.pts = extractFeatures(P[0]).filter((_, i) => i % 3 === 0); res.feats = tr.pts; tr.prevP = P; res.status = 'lost'; tr.last = res; return res;
+      }
       if (tr.pts.length > 0) {
-        const t = trackFeatures(tr.prevP, P, tr.pts, tr.filters);
+        const t = trackFeatures(tr.prevP, P, tr.pts, true);
         const idx = []; for (let i = 0; i < tr.pts.length; i++) if (t.keep[i]) idx.push(i);
         res.track = { prev: tr.pts, next: t.next, keep: t.keep, reason: t.reason, idx };
         if (idx.length >= 5) {
           let fm = 0; for (const i of idx) fm += Math.hypot(t.next[i][0] - tr.pts[i][0], t.next[i][1] - tr.pts[i][1]); fm /= idx.length;
-          const rs = tr.filters ? ransacFilter(tr.pts, t.next, idx, tr.rr) : { inl: idx.slice(), out: [], cells: null };
+          const rs = ransacFilter(tr.pts, t.next, idx, tr.rr);
           res.ransac = rs;
           if (fm < STATIC_FLOW && idx.length >= MIN_TRACKS) { res.status = 'static'; tr.last = res; return res; }
           if (rs.inl.length > 8) {
@@ -6056,6 +6094,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       const P = pyramid(grayOf());
       const ra = trackStep(S.A, P, f); trackStep(S.B, P, f);
       S.f = f; S.last = ra; updateDev();
+      if (S.marker) { const b = markerPos(S.B, 'B'); S.trail.push(b); if (S.trail.length > 90) S.trail.shift(); }
       return ra;
     }
 
@@ -6075,6 +6114,8 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         for (const i of r.inl) arrow(t.prev[i][0], t.prev[i][1], t.next[i][0], t.next[i][1], COL.ok, 3); }
       if (S.marker) {
         const a = markerPos(S.A, 'A'), b = markerPos(S.B, 'B');
+        if (S.trail.length > 1) { ctx.strokeStyle = 'rgba(255,92,77,.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(S.trail[0][0], S.trail[0][1]); for (const t of S.trail) ctx.lineTo(t[0], t[1]); ctx.stroke(); }
+        if (S.dev > 2) { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]); }
         ctx.setLineDash([3, 3]); ctx.strokeStyle = COL.raw; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(b[0], b[1], 14, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = COL.raw; ctx.font = '10px sans-serif'; ctx.fillText('필터 없음', b[0] + 16, b[1] + 22);
         ctx.strokeStyle = COL.mark; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(a[0], a[1], 12, 0, 6.283); ctx.stroke();
@@ -6094,14 +6135,14 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     async function resetAll() {
       if (liveHandle) { try { vid.cancelVideoFrameCallback && vid.cancelVideoFrameCallback(liveHandle); } catch (e) {} liveHandle = 0; }
       vid.pause();
-      S.f = 0; S.A = mkTracker(true); S.B = mkTracker(false); S.last = null; S.dev = 0;
+      S.f = 0; S.A = mkTracker(true); S.B = mkTracker(false); S.last = null; S.dev = 0; S.trail = [];
       await ready(); await seekTo(0); renderFrame();
       S.marker = null; placeMarker(258, 92); // 기본 마커: 공작기계 스핀들
       draw({ f: 0, feats: [], status: 'ready' });
       status('대기 중 — 「▶ 실행」을 누르세요. 파란 십자가 필터 적용 추적, 빨간 점선이 필터 없는 추적입니다.');
     }
     async function showStep(view, f, mine) { await seekTo(f / FPS); if (mine !== F.runId) return false; S.view = view; syncView(); const res = processFrame(f); draw(res, view); return mine === F.runId; }
-    function redraw(view) { if (!S.last) return; renderFrame(); draw(S.last, view); }
+    function redraw(view) { renderFrame(); draw(S.last || { f: S.f, feats: [], status: 'ready' }, view); }
     function live(mine) {
       return new Promise(resolve => {
         let done = false, f = S.f;
