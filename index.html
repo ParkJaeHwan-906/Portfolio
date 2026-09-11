@@ -1770,12 +1770,22 @@
   .vf .stagelog{max-width:none; background:#0d0d0f; color:#d6d6dc; border-radius:10px; padding:14px 16px; font-family:var(--code); font-size:12.5px; line-height:1.55; letter-spacing:0; min-height:56px; max-height:280px; overflow:auto; counter-reset:stg;}
   .vf .stagelog::before{content:"$ 대기 중 — 재생하면 처리 로그가 여기에 찍힙니다"; display:block; color:#6e6e76;}
   .vf .stagelog:has(li.seen, li.on)::before{display:none;}
-  .vf .stagelog li{display:none; grid-template-columns:none; gap:0; padding:5px 0; border:0; opacity:1; transition:none;}
-  .vf .stagelog li.seen, .vf .stagelog li.on{display:block;}
+  .vf .stagelog li{display:block; grid-template-columns:none; gap:0; padding:5px 0; margin:0; border:0; opacity:1; transition:none;}
+  /* 아직 도달하지 않은 줄은 display:none 이 아니라 접어 둔다 — 시연 스크립트가 offsetParent 로
+     '보이는 줄'을 세므로 흐름에서 빼면 안 된다 */
+  .vf .stagelog li:not(.seen):not(.on){height:0; padding:0; overflow:hidden; opacity:0;}
+  /* 시나리오별 줄 고르기(요청 경로·하네스·배포)는 display:grid 로 켜므로 여기서 block 으로 되돌린다 */
+  .vf #req-root.v-fe .stagelog li[data-var="fe"], .vf #req-root.v-api .stagelog li[data-var="api"], .vf #req-root.v-rt .stagelog li[data-var="rt"],
+  .vf #hn-root.v-rej .stagelog li[data-var="rej"], .vf #hn-root.v-pass .stagelog li[data-var="ok"], .vf #hn-root.v-fail .stagelog li[data-var="ok"],
+  .vf #hn-root.v-pass .stagelog li[data-var="pass"], .vf #hn-root.v-fail .stagelog li[data-var="fail"],
+  .vf #dep-root:not(.fail) .stagelog li[data-var="ok"], .vf #dep-root.fail .stagelog li[data-var="bad"]{display:block;}
   .vf .stagelog li::before{display:inline; counter-increment:stg; content:"$ step " counter(stg) "  "; background:none; color:#6e6e76; padding:0; height:auto; border-radius:0; font:inherit; font-weight:600;}
   .vf .stagelog li.on::before{background:none; color:var(--primary-on-dark, #2997ff);}
   .vf .stagelog .st{display:inline; font:inherit; font-weight:600; letter-spacing:0; color:#e8e8ee;}
   .vf .stagelog li.on .st::after{content:" ▍"; color:var(--primary-on-dark, #2997ff); animation:pk-blink 1s steps(1) infinite;}
+  /* 누적으로 .on 을 남기는 시연에서는 마지막 줄에만 커서·강조를 둔다 */
+  .vf .stagelog li.on:has(~ li.on) .st::after{content:none;}
+  .vf .stagelog li.on:has(~ li.on)::before{color:#6e6e76;}
   .vf .stagelog .sd{display:block; margin:2px 0 0 0; padding-left:2ch; font:inherit; font-size:12px; letter-spacing:0; color:#8e8e96; text-indent:0;}
   .vf .stagelog .sd::before{content:"# "; color:#5a5a62;}
   @keyframes pk-blink{50%{opacity:0;}}
@@ -4678,11 +4688,10 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       </div>
       <div class="dstep">
         <span class="dnum">2</span><span class="dlabel">재생</span>
-        <button type="button" class="ghost next" id="mq-next">다음 단계 →</button>
-        <button type="button" class="run" id="mq-run">▶ 처음부터 자동 재생</button>
+        <button type="button" class="run" id="mq-run">▶ 실행</button>
         <button type="button" class="ghost" id="mq-reset">처음으로</button>
       </div>
-      <p class="dhint">「다음 단계 →」를 누르면 한 단계씩 진행되고, 「자동 재생」은 끝까지 천천히 이어서 보여줍니다.</p>
+      <p class="dhint">시나리오를 고르고 「▶ 실행」을 누르면 큐가 한 단계씩 천천히 움직이고, 아래 로그에 처리 내용이 찍힙니다.</p>
     </div>
 
     <div class="demo-pane">
@@ -4770,11 +4779,10 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     <div class="demo-bar demo-bar--steps">
       <div class="dstep">
         <span class="dnum">1</span><span class="dlabel">재생</span>
-        <button type="button" class="ghost next" id="rc-next">다음 단계 →</button>
-        <button type="button" class="run" id="rc-run">▶ 처음부터 자동 재생</button>
+        <button type="button" class="run" id="rc-run">▶ 실행</button>
         <button type="button" class="ghost" id="rc-reset">처음으로</button>
       </div>
-      <p class="dhint">플레이어 B의 연결을 끊었다가 다시 붙이는 7단계입니다. 「다음 단계 →」로 한 단계씩 넘겨 보세요.</p>
+      <p class="dhint">플레이어 B의 연결을 끊었다가 다시 붙이는 7단계입니다. 「▶ 실행」을 누르면 천천히 이어서 보여줍니다.</p>
     </div>
 
     <div class="demo-pane">
@@ -5124,7 +5132,6 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     okBtn.addEventListener('click', () => setMode(false));
     failBtn.addEventListener('click', () => setMode(true));
     ROOT.querySelector('#mq-run').addEventListener('click', () => { q = []; renderQ(); qact(''); status(''); F.play(buildSteps()); });
-    ROOT.querySelector('#mq-next').addEventListener('click', () => F.step(buildSteps()));
     ROOT.querySelector('#mq-reset').addEventListener('click', idle);
     idle();
   })();
@@ -5200,7 +5207,6 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 
     function idle() { resetTexts(); F.idle(steps()); }
     ROOT.querySelector('#rc-run').addEventListener('click', () => { resetTexts(); F.play(steps()); });
-    ROOT.querySelector('#rc-next').addEventListener('click', () => F.step(steps()));
     ROOT.querySelector('#rc-reset').addEventListener('click', idle);
     idle();
   })();
@@ -7191,9 +7197,11 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           if (!(li instanceof HTMLLIElement) || !li.classList.contains('on')) return;
           // 방금 .on 이 새로 붙은 경우만 본다. 우리가 .seen 을 쓰면서 생기는 변경은 건너뛴다
           if ((m.oldValue || '').split(/\s+/).includes('on')) return;
-          const items = Array.from(list.children);
+          // 시나리오별로 줄을 고르는 시연은 앞 줄이 숨어 있을 수 있다 — 보이는 줄 기준으로 센다
+          const all = Array.from(list.children);
+          const items = all.filter(x => x.offsetParent !== null);
           const i = items.indexOf(li);
-          if (i === 0) items.forEach(x => { if (x.classList.contains('seen')) x.classList.remove('seen'); });
+          if (i <= 0) all.forEach(x => { if (x !== li && x.classList.contains('seen')) x.classList.remove('seen'); });
           for (let k = 0; k <= i; k++) if (!items[k].classList.contains('seen')) items[k].classList.add('seen');
           list.scrollTop = list.scrollHeight;
         });
