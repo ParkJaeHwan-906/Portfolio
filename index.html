@@ -245,6 +245,8 @@
   /* Retrospect */
   .retro{display:grid; grid-template-columns:repeat(2,1fr); gap:26px; margin-top:40px;}
   .rcard{border:1px solid var(--hairline); border-radius:18px; padding:28px; background:var(--canvas);}
+  .retro--3{grid-template-columns:repeat(3,1fr); gap:20px;}
+  .retro--3 .rcard{padding:24px;}
   .rcard h4{margin:0 0 14px; font-size:18px; font-weight:600; letter-spacing:-.02em;}
   .rcard .lab{font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--primary); margin:16px 0 8px;}
   .rcard p{margin:0; font-size:14.5px; line-height:1.55; color:var(--body-muted);}
@@ -5664,12 +5666,18 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--parchment">
   <div class="wrap">
     <p class="sectlabel">Retrospect</p>
-    <div class="retro">
+    <div class="retro retro--3">
       <div class="rcard">
         <h4>LLM 활용 방식</h4>
         <p>약 4주의 제한된 기간으로 모델을 직접 튜닝할 자원이 부족해, 생성은 Gemini API 호출로 구현하고 Retrieval 정확도 개선에 집중했습니다.</p>
         <p class="lab">개선 방향</p>
         <p>RAG 파이프라인은 유지하되 LoRA 파인튜닝 모델을 적용해, LLM을 도메인 특화 내부 모델로 대체하는 방향.</p>
+      </div>
+      <div class="rcard">
+        <h4>정확도 개선의 정량 평가 부재</h4>
+        <p>유저 테스트의 "답변이 부정확하다"는 피드백을 근거로 Bi-Encoder → Cross-Encoder 2단계 구조로 바꿨지만, 개선 전후를 수치로 비교하지 못했습니다. 평가용 질문·정답 문서 세트가 없어 "좋아진 것 같다"에 그쳤습니다.</p>
+        <p class="lab">개선 방향</p>
+        <p>질문–정답 문서 쌍으로 평가셋을 만들어 1차 후보 50건의 정답 포함률(Recall@50)과 Top 5 정확도를 전후로 측정. 후보 수·유사도 임계값을 감이 아니라 수치로 조정.</p>
       </div>
       <div class="rcard">
         <h4>협업 과정의 부재</h4>
