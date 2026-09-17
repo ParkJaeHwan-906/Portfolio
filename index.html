@@ -204,6 +204,7 @@
   .rolelead .rl-label::after{content:""; height:1px; width:32px; background:currentColor; opacity:.45;}
   .tile--dark .rolelead .rl-label,.tile--dark2 .rolelead .rl-label,.tile--dark3 .rolelead .rl-label{color:var(--primary-on-dark);}
   .rolelead p{margin:0; font-size:17px; line-height:1.55; font-weight:500; letter-spacing:-.014em; color:var(--ink); max-width:36ch;}
+  .rolelead p + p{margin-top:12px;}
   .tile--dark .rolelead p,.tile--dark2 .rolelead p,.tile--dark3 .rolelead p{color:var(--on-dark);}
   .meta{display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:26px;}
   .meta .m{display:flex; flex-direction:column; gap:3px;}
@@ -6294,8 +6295,9 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       <h2 class="hero-display">주소 검색 성능 개선</h2>
       <div class="rolelead">
         <p class="rl-label">Problem &amp; Approach</p>
-        <p>OCR 결과를 표준 주소에 연결하던 LCS 전수 탐색이 데이터 증가에 따라 선형으로 느려지는 문제를 재현했습니다.
-          개인정보 없는 합성 데이터로 100건부터 1천만 건까지 다섯 규모를 만들고, Java로 다시 쓴 LCS 기준선과 Elasticsearch 2~4-gram 역색인의 정확도·지연시간을 직접 비교했습니다.</p>
+        <p>OCR 결과를 표준 주소에 연결하던 LCS 전수 탐색은 데이터가 늘어난 만큼 느려집니다. 이 문제를 개인정보 없는 합성 데이터로 재현하고, 후보를 좁히는 방식으로 <strong>n-gram 역색인</strong>을 검증했습니다.</p>
+        <p>단어 단위 역색인이나 코사인 유사도는 OCR 오타 한 글자가 토큰과 벡터를 통째로 바꿔 정답을 놓치기 쉽습니다. 2~4-gram은 오타가 든 gram만 버리고, 나머지 gram으로 정답 문서에 닿습니다.</p>
+        <p>100건부터 1천만 건까지 다섯 규모에서 LCS 기준선과 Elasticsearch 2~4-gram 역색인의 정확도와 지연시간을 직접 비교했습니다.</p>
       </div>
       <div class="meta">
         <div class="m"><span class="lbl">프로젝트 유형</span><span class="val">개인 성능 개선 실험</span></div>
@@ -6336,12 +6338,12 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="LCS 전수 탐색은 모든 후보와 문자열을 비교하므로 비용이 후보 수에 선형 비례한다">
             <text class="k" x="22" y="34">LCS 전수 탐색</text>
             <text x="22" y="54" style="font-size:11.5px">모든 후보와 LCS 계산 · Java 기준선</text>
-            <rect class="bar" x="22" y="70" width="196" height="12" rx="6"/><text class="mono" x="232" y="80">LCS 27</text>
-            <rect class="bar on" x="22" y="90" width="248" height="12" rx="6"/><text class="mono hi" x="282" y="100">31</text>
-            <rect class="bar" x="22" y="110" width="128" height="12" rx="6"/><text class="mono" x="164" y="120">LCS 18</text>
-            <rect class="bar" x="22" y="130" width="172" height="12" rx="6"/><text class="mono" x="208" y="140">LCS 23</text>
-            <rect class="bar" x="22" y="150" width="96" height="12" rx="6"/><text class="mono" x="132" y="160">LCS 14 … × N</text>
-            <text x="22" y="184" style="font-size:12px">후보 N건을 전부 비교 → 비용 ∝ N</text>
+            <rect class="bar" x="22" y="70" width="149" height="12" rx="6"/><text class="mono" x="183" y="80">LCS 27</text>
+            <rect class="bar on" x="22" y="90" width="170" height="12" rx="6"/><text class="mono hi" x="204" y="100">LCS 31 · 1위</text>
+            <rect class="bar" x="22" y="110" width="99" height="12" rx="6"/><text class="mono" x="133" y="120">LCS 18</text>
+            <rect class="bar" x="22" y="130" width="127" height="12" rx="6"/><text class="mono" x="161" y="140">LCS 23</text>
+            <rect class="bar" x="22" y="150" width="77" height="12" rx="6"/><text class="mono" x="111" y="160">LCS 14 … × N</text>
+            <text x="22" y="184" style="font-size:12px">후보 N건 전부 비교, 가장 긴 LCS가 1위 → 비용 ∝ N</text>
           </svg>
         </div>
         <h4>LCS 전수 탐색</h4>
@@ -6368,7 +6370,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           </svg>
         </div>
         <h4>Elasticsearch n-gram</h4>
-        <p>질의를 2~4-gram으로 분해해 역색인에서 겹치는 문서만 후보로 모읍니다. 전체 후보 비교가 사라집니다.</p>
+        <p>질의를 2~4-gram으로 분해해 역색인에서 겹치는 문서만 후보로 모읍니다. 「테헤란노」처럼 오타가 든 gram은 색인에 없어 버려지지만 나머지 gram이 정답을 가리키므로, 오타 한 글자에 검색이 통째로 실패하지 않습니다. 전체 후보 비교도 사라집니다.</p>
       </div>
     </div>
   </div>
@@ -6425,7 +6427,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           <ul class="bul">
             <li>LCS 전수 탐색 — 모든 후보와 LCS를 계산하는 Java 기준선. 적재 시 alias를 한 번만 정규화하고 두 행 int[] DP와 Top-5 힙으로 구현</li>
             <li>Elasticsearch 2~4-gram 역색인 — Docker Compose 단일 노드(8.17.4 · 2GB heap)에 1천만 문서를 370초에 색인, 약 1.8GB</li>
-            <li>첫 버전은 Python으로 썼으나 기준선이 언어에 발목 잡혀 Java로 전부 다시 쓰고 전 구간 재측정 — 이전 결과는 archive로 보존</li>
+            <li>n-gram을 고른 이유 — 단어 단위 역색인은 오타가 든 토큰이 색인에 없어 검색 자체가 실패하고, 코사인 유사도는 오타 하나로 벡터가 움직여 순위가 흔들림. 2~4-gram은 오타를 gram 몇 개의 손실로 가두고 <code>minimum_should_match 55%</code>로 그 손실을 허용</li>
           </ul>
         </div>
       </div>
@@ -6460,8 +6462,8 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <span class="tag tag--s">선택</span>
         <ul>
           <li>1만 건 이하 매핑 테이블은 LCS로 단순하게 유지</li>
-          <li>대규모는 n-gram 역색인으로 후보를 찾고 상위 후보만 LCS로 재순위</li>
-          <li>기준선을 Java로 다시 써 언어 차이가 결론을 흔들지 않게 함</li>
+          <li>대규모는 n-gram 역색인으로 후보를 찾고 상위 후보만 LCS로 재순위 — 오타에 강한 후보 회수와 정밀한 순위 결정을 나눠 맡김</li>
+          <li>LCS 기준선도 Elasticsearch와 같은 JVM 위에서 실행해 언어 차이가 결론에 섞이지 않게 함</li>
         </ul>
       </div>
     </div>
@@ -6618,30 +6620,30 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--light">
   <div class="wrap">
     <p class="sectlabel">Trouble Shooting</p>
-    <h3 class="display-md">기준선이 공정한가 — Python LCS가 만든 착시</h3>
+    <h3 class="display-md">n-gram을 사용한 오타 보정</h3>
     <div class="ts">
       <div class="tscard">
         <span class="tag tag--t">Trouble</span>
         <ul>
-          <li>첫 버전(Python)에서는 1천만 건 LCS 한 질의가 16분 5초, 교차점이 100건과 1만 건 사이로 나옴</li>
-          <li>1,000질의를 돌릴 수 없어 1질의 참고값만 남고, 두 방식을 같은 표본으로 비교하지 못함</li>
-          <li>그 차이가 알고리즘 때문인지 언어 때문인지 구분할 수 없었음</li>
+          <li>전수 탐색을 대신할 후보 축소 방식이 필요했는데, OCR 질의는 「서울특<strong>벌</strong>시 강남구 테헤란<strong>노</strong> 152」처럼 오탈자를 몇 개씩 품고 들어옴</li>
+          <li>단어 단위 역색인은 「테헤란노」가 「테헤란로」와 다른 토큰이라 색인에 걸리지 않음 — 정답 문서가 후보에서 아예 빠짐</li>
+          <li>코사인 유사도는 문자열 하나를 벡터 하나로 만들기 때문에 오타 한 글자가 벡터 전체를 움직여 순위가 크게 흔들림</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--c">Cause</span>
         <ul>
-          <li>LCS는 후보마다 문자열 전체를 비교해 비용이 후보 수에 선형 비례</li>
-          <li>인터프리터 이중 루프 DP에, 질의마다 후보 alias를 다시 정규화하는 구현</li>
-          <li>Elasticsearch는 JVM 위에서 도는데 기준선만 Python — 비교 자체가 기울어져 있었음</li>
+          <li>두 방식 모두 비교 단위가 「토큰 전체」 또는 「벡터 하나」라, 오타가 그 단위 전체를 오염시킴</li>
+          <li>OCR 오류는 한 글자 치환·삭제, 공백 제거, 행정구역 축약처럼 국소적인데 비교 단위는 국소적이지 않았음</li>
+          <li>후보를 놓치면 뒤의 재순위가 아무리 정밀해도 복구할 수 없음 — 회수 단계가 오타에 강해야 함</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--s">Solution</span>
         <ul>
-          <li>Java 21로 전부 다시 작성 — CLI·결과 JSON 형식은 그대로, alias는 적재 시 한 번만 정규화, 두 행 int[] DP</li>
-          <li>1천만 건 LCS가 질의당 7.18초로 줄어 두 방식을 같은 100질의로 직접 비교</li>
-          <li>교차점이 1만 건 근처로 이동 — 「커지면 역색인」 결론은 유지되지만 근거 수치는 전부 교체</li>
+          <li>2~4-gram 역색인 — 문자열을 두세 글자 단위로 잘라 색인하므로 오타는 gram 몇 개의 손실로 그치고, 나머지 gram이 정답 문서를 가리킴</li>
+          <li>색인 전 문자·숫자만 남기는 char_filter로 공백·기호 차이를 제거하고, <code>minimum_should_match 55%</code>로 오탈자 gram 손실을 허용</li>
+          <li>1천만 건 1,000질의에서 Top-5 97.7% · p50 37.79ms — 오타가 섞인 질의로도 후보를 놓치지 않으면서 전체 비교를 없앰. 남은 Top-1 격차는 후보 안에서 LCS 재순위로 좁히는 것이 다음 단계</li>
         </ul>
       </div>
     </div>
