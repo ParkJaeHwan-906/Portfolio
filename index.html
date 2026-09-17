@@ -6295,12 +6295,12 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       <div class="rolelead">
         <p class="rl-label">Problem &amp; Approach</p>
         <p>OCR 결과를 표준 주소에 연결하던 LCS 전수 탐색이 데이터 증가에 따라 선형으로 느려지는 문제를 재현했습니다.
-          개인정보 없는 합성 데이터로 100건·1만 건·1천만 건을 만들고, Elasticsearch 2~4-gram 역색인과 정확도·지연시간을 직접 비교했습니다.</p>
+          개인정보 없는 합성 데이터로 100건부터 1천만 건까지 다섯 규모를 만들고, Java로 다시 쓴 LCS 기준선과 Elasticsearch 2~4-gram 역색인의 정확도·지연시간을 직접 비교했습니다.</p>
       </div>
       <div class="meta">
         <div class="m"><span class="lbl">프로젝트 유형</span><span class="val">개인 성능 개선 실험</span></div>
-        <div class="m"><span class="lbl">기술</span><span class="val">Python · Elasticsearch · Docker</span></div>
-        <div class="m"><span class="lbl">측정 규모</span><span class="val">100 · 10K · 10M documents</span></div>
+        <div class="m"><span class="lbl">기술</span><span class="val">Java 21 · Elasticsearch · Docker</span></div>
+        <div class="m"><span class="lbl">측정 규모</span><span class="val">100 · 10K · 100K · 1M · 10M documents</span></div>
         <div class="m"><span class="lbl">저장소</span><span class="val"><a href="https://github.com/ParkJaeHwan-906/address-matching-benchmark" target="_blank" rel="noopener">address-matching-benchmark</a></span></div>
       </div>
       <div class="btns">
@@ -6335,7 +6335,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <div class="device">
           <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="LCS 전수 탐색은 모든 후보와 문자열을 비교하므로 비용이 후보 수에 선형 비례한다">
             <text class="k" x="22" y="34">LCS 전수 탐색</text>
-            <text x="22" y="54" style="font-size:11.5px">모든 후보와 LCS 계산 · Python 기준선</text>
+            <text x="22" y="54" style="font-size:11.5px">모든 후보와 LCS 계산 · Java 기준선</text>
             <rect class="bar" x="22" y="70" width="196" height="12" rx="6"/><text class="mono" x="232" y="80">LCS 27</text>
             <rect class="bar on" x="22" y="90" width="248" height="12" rx="6"/><text class="mono hi" x="282" y="100">31</text>
             <rect class="bar" x="22" y="110" width="128" height="12" rx="6"/><text class="mono" x="164" y="120">LCS 18</text>
@@ -6379,7 +6379,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     <p class="sectlabel">Contribution</p>
     <div class="contrib contrib--rev">
       <div class="contrib__img shot">
-        <svg class="abfig abfig--wide" viewBox="0 0 560 360" role="img" aria-label="generate, index, compare 세 명령으로 100건·1만 건·1천만 건 시나리오를 같은 절차로 실행하고 결과를 JSON으로 남기는 벤치마크 구조">
+        <svg class="abfig abfig--wide" viewBox="0 0 560 384" role="img" aria-label="generate, index, compare 세 명령으로 100건·1만 건·1천만 건 시나리오를 같은 절차로 실행하고 결과를 JSON으로 남기는 벤치마크 구조">
           <text class="k" x="28" y="40" style="font-size:15px">address-bench — 한 CLI, 세 시나리오</text>
           <g>
             <rect class="box" x="28" y="64" width="150" height="58" rx="10"/>
@@ -6394,17 +6394,21 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
             <text class="mono k" x="400" y="88">compare</text>
             <text x="400" y="108" style="font-size:11.5px">LCS vs ES · 같은 질의</text>
           </g>
-          <text class="k" x="28" y="158" style="font-size:12px;letter-spacing:.06em">시나리오</text>
-          <g style="font-size:12.5px">
-            <rect class="box" x="28" y="170" width="504" height="34" rx="8"/>
-            <text class="k" x="44" y="192">Tiny</text><text class="mono" x="120" y="192">100</text><text x="250" y="192">질의 100 · LCS · ES 직접 비교</text>
-            <rect class="box" x="28" y="210" width="504" height="34" rx="8"/>
-            <text class="k" x="44" y="232">Small</text><text class="mono" x="120" y="232">10,000</text><text x="250" y="232">질의 100 비교 · ES 1,000 별도</text>
-            <rect class="box" x="28" y="250" width="504" height="34" rx="8"/>
-            <text class="k" x="44" y="272">Large</text><text class="mono" x="120" y="272">10,000,000</text><text x="250" y="272">ES 1,000 · LCS 1 (--query-limit)</text>
+          <text class="k" x="28" y="152" style="font-size:12px;letter-spacing:.06em">시나리오</text>
+          <g style="font-size:12px">
+            <rect class="box" x="28" y="162" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="181">Tiny</text><text class="mono" x="120" y="181">100</text><text x="250" y="181">직접 비교 100질의</text>
+            <rect class="box" x="28" y="196" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="215">Small</text><text class="mono" x="120" y="215">10,000</text><text x="250" y="215">직접 비교 100 · ES 단독 1,000</text>
+            <rect class="box" x="28" y="230" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="249">Medium</text><text class="mono" x="120" y="249">100,000</text><text x="250" y="249">직접 비교 100 · ES 단독 1,000</text>
+            <rect class="box" x="28" y="264" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="283">Big</text><text class="mono" x="120" y="283">1,000,000</text><text x="250" y="283">직접 비교 100 · ES 단독 1,000</text>
+            <rect class="box" x="28" y="298" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="317">Large</text><text class="mono" x="120" y="317">10,000,000</text><text x="250" y="317">직접 비교 100 · ES 1,000 · 색인 370초</text>
           </g>
-          <text class="k" x="28" y="318" style="font-size:12px;letter-spacing:.06em">측정 지표</text>
-          <text class="mono" x="28" y="340">Top-1 · Top-5 · MRR · p50 · p95 · p99 · QPS → results/*.json</text>
+          <text class="k" x="28" y="350" style="font-size:12px;letter-spacing:.06em">측정 지표</text>
+          <text class="mono" x="28" y="370">Top-1 · Top-5 · MRR · p50 · p95 · p99 · QPS → results/*.json</text>
         </svg>
       </div>
       <div class="contrib__text">
@@ -6412,16 +6416,16 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           <h4>재현 가능한 벤치마크 설계</h4>
           <ul class="bul">
             <li>개인정보 없는 합성 주소 생성기 — seed 20260917, 주소 ID별 고유 지번을 보장해 서로 다른 정답이 같은 문자열을 갖는 충돌 제거</li>
-            <li>100건·1만 건·1천만 건 세 시나리오를 같은 CLI(generate → index → compare)로 실행</li>
+            <li>100건부터 1천만 건까지 다섯 시나리오를 같은 CLI(generate → index → compare)로 실행 — Java 21 · Gradle · picocli · Jackson, Elasticsearch 클라이언트 없이 java.net.http로 직접 호출</li>
             <li>Top-1·Top-5·MRR, p50·p95·p99, QPS를 정답 ID 기준으로 측정하고 원본 JSON을 그대로 보관</li>
           </ul>
         </div>
         <div class="cblock">
           <h4>두 검색 경로 구현·비교</h4>
           <ul class="bul">
-            <li>LCS 전수 탐색 — 모든 후보와 LCS를 계산하는 Python 기준선. 실무에서 쓰던 방식을 그대로 재구성</li>
-            <li>Elasticsearch 2~4-gram 역색인 — Docker Compose 단일 노드(8.17.4 · 2GB heap)에 1천만 문서 색인, 약 2.17GB</li>
-            <li>완주하지 못한 LCS 결과는 외삽하지 않고 1질의 참고값으로만 표기 (--query-limit · --skip-lcs)</li>
+            <li>LCS 전수 탐색 — 모든 후보와 LCS를 계산하는 Java 기준선. 적재 시 alias를 한 번만 정규화하고 두 행 int[] DP와 Top-5 힙으로 구현</li>
+            <li>Elasticsearch 2~4-gram 역색인 — Docker Compose 단일 노드(8.17.4 · 2GB heap)에 1천만 문서를 370초에 색인, 약 1.8GB</li>
+            <li>첫 버전은 Python으로 썼으나 기준선이 언어에 발목 잡혀 Java로 전부 다시 쓰고 전 구간 재측정 — 이전 결과는 archive로 보존</li>
           </ul>
         </div>
       </div>
@@ -6434,30 +6438,30 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <div class="wrap">
     <p class="sectlabel">Deep Dive</p>
     <h3 class="display-md">작을 때는 단순하게,<br>커지면 역색인으로.</h3>
-    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">같은 seed와 오류 규칙으로 만든 주소를 두 방식에 넣었습니다. 정확도는 정답 ID로, 속도는 p50·p95와 QPS로 재서 어디서부터 역색인이 이기는지 확인했습니다.</p>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">같은 seed와 오류 규칙으로 만든 주소를 두 방식에 넣었습니다. 정확도는 정답 ID로, 속도는 p50·p95와 QPS로 재서 어디서부터 역색인이 이기는지 확인했습니다. 교차점은 1만 건 근처였습니다.</p>
     <div class="ts" style="margin-top:32px">
       <div class="tscard">
         <span class="tag tag--c">제약</span>
         <ul>
           <li>LCS는 모든 주소 후보와 문자열을 비교해 비용이 데이터 규모에 선형 비례</li>
-          <li>1천만 건에서는 한 질의가 약 16분 — 온라인 요청으로 처리 불가</li>
+          <li>1천만 건에서는 한 질의가 약 7초 — 온라인 요청으로 처리 불가</li>
           <li>실제 고객 주소는 쓸 수 없어 합성 데이터로 같은 조건을 재현</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--t">판단</span>
         <ul>
-          <li>100건에서는 검색 엔진의 HTTP·고정 비용 때문에 LCS가 1.32배 더 빠름</li>
-          <li>1만 건부터 역전 — p50 기준 Elasticsearch가 118배 빠르고 Top-1은 97%로 같음</li>
-          <li>후보가 많아지면 유사 주소가 늘어 Elasticsearch Top-1이 90.3%까지 하락</li>
+          <li>100건에서는 LCS가 33배 빠름 — 검색 엔진은 HTTP 왕복과 고정 비용만으로 2~3ms</li>
+          <li>1만 건에서 교차(ES 1.35배) — 10만·100만·1천만 건에서 9배·37배·196배로 벌어짐</li>
+          <li>후보가 늘면 두 방식 모두 Top-1이 떨어지는데 LCS가 더 크게 떨어짐 — 1천만 건에서 79% vs 86%</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--s">선택</span>
         <ul>
-          <li>작은 매핑 테이블은 LCS로 단순하게 유지</li>
+          <li>1만 건 이하 매핑 테이블은 LCS로 단순하게 유지</li>
           <li>대규모는 n-gram 역색인으로 후보를 찾고 상위 후보만 LCS로 재순위</li>
-          <li>완주하지 못한 측정은 외삽하지 않고 참고값으로만 표기</li>
+          <li>기준선을 Java로 다시 써 언어 차이가 결론을 흔들지 않게 함</li>
         </ul>
       </div>
     </div>
@@ -6471,26 +6475,26 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <div class="stats">
     <div class="stat">
       <span class="lbl">100건 · LCS 우세 <span class="pv m">실측</span></span>
-      <span class="val">4.85<span class="u">ms</span></span>
-      <span class="note">Elasticsearch 6.38ms<br>작은 후보군에서는 전수 탐색이 1.32배 빠름</span>
+      <span class="val">0.08<span class="u">ms</span></span>
+      <span class="note">Elasticsearch 2.74ms<br>작은 후보군에서는 전수 탐색이 33배 빠름</span>
     </div>
     <div class="stat vfhero">
-      <span class="lbl">1만 건 · ES 우세 <span class="pv m">실측</span></span>
-      <span class="val">118<span class="u">배</span></span>
-      <span class="note">p50 4.56ms vs 536.86ms<br>Top-1 정확도는 양쪽 모두 97%</span>
+      <span class="lbl">1만 건 · 교차점 <span class="pv m">실측</span></span>
+      <span class="val">1.35<span class="u">배</span></span>
+      <span class="note">ES 2.95ms vs LCS 3.96ms<br>Top-1 정확도는 양쪽 모두 100%</span>
     </div>
     <div class="stat vfhero">
-      <span class="lbl">1천만 건 · 동일 질의 <span class="pv m">실측</span></span>
-      <span class="val">13.4K<span class="u">배</span></span>
-      <span class="note">Elasticsearch 71.99ms<br>LCS 965,045.68ms · 약 16분 5초</span>
+      <span class="lbl">1천만 건 · 같은 100질의 <span class="pv m">실측</span></span>
+      <span class="val">196<span class="u">배</span></span>
+      <span class="note">Elasticsearch 36.68ms<br>LCS 7,178.45ms · 약 7.2초</span>
     </div>
     <div class="stat">
       <span class="lbl">1천만 건 · ES Top-5 <span class="pv m">실측</span></span>
-      <span class="val">97.1<span class="u">%</span></span>
-      <span class="note">1,000개 질의 · p50 48.62ms<br>인덱스 10,000,000문서 · 약 2.17GB</span>
+      <span class="val">97.7<span class="u">%</span></span>
+      <span class="note">1,000개 질의 · p50 37.79ms<br>인덱스 10,000,000문서 · 약 1.8GB · 색인 370초</span>
     </div>
   </div>
-  <p class="legend"><span class="pv m">실측</span>직접 측정한 값 &nbsp;·&nbsp; 합성 데이터 seed 20260917 &nbsp;·&nbsp; 2026-09-17 · Windows 11 · Ryzen 5 5600 · Elasticsearch 8.17.4</p>
+  <p class="legend"><span class="pv m">실측</span>직접 측정한 값 &nbsp;·&nbsp; 합성 데이터 seed 20260917 &nbsp;·&nbsp; 2026-09-17 · Windows 11 · Ryzen 5 5600 · Java 21 · Elasticsearch 8.17.4</p>
 
   <h4 class="sec">시연 — 검색어 하나, 두 검색 경로</h4>
   <p style="max-width:70ch">격자의 점은 매핑 테이블을 줄여 그린 것이고, 실제 후보 수는 고른 규모 그대로입니다. OCR 오류가 섞인 같은 검색어를 넣으면, LCS는 점을 전부 열어 보고 Elasticsearch는 검색어를 n-gram으로 쪼갠 뒤 역색인에 걸리는 점만 엽니다. 시간 표기는 모두 실측값입니다.</p>
@@ -6592,16 +6596,21 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     <table>
       <thead><tr><th>매핑 데이터</th><th>방식</th><th>질의 수</th><th>Top-1</th><th>Top-5</th><th>p50</th><th>처리량</th></tr></thead>
       <tbody>
-        <tr><td>100건</td><td>LCS</td><td class="mono">100</td><td>98.0%</td><td>100.0%</td><td class="mono">4.85ms</td><td class="mono">203.33 QPS</td></tr>
-        <tr><td>100건</td><td>Elasticsearch</td><td class="mono">100</td><td>99.0%</td><td>99.0%</td><td class="mono">6.38ms</td><td class="mono">104.43 QPS</td></tr>
-        <tr><td>1만 건</td><td>LCS</td><td class="mono">100</td><td>97.0%</td><td>100.0%</td><td class="mono">536.86ms</td><td class="mono">1.87 QPS</td></tr>
-        <tr><td>1만 건</td><td>Elasticsearch</td><td class="mono">100</td><td>97.0%</td><td>99.0%</td><td class="mono">4.56ms</td><td class="mono">119.43 QPS</td></tr>
-        <tr><td>1천만 건</td><td>Elasticsearch</td><td class="mono">1,000</td><td>90.3%</td><td>97.1%</td><td class="mono">48.62ms</td><td class="mono">19.43 QPS</td></tr>
-        <tr><td>1천만 건</td><td>LCS</td><td class="mono">1</td><td>100%*</td><td>100%*</td><td class="mono">965,045.68ms</td><td class="mono">0.00104 QPS</td></tr>
+        <tr><td>100건</td><td>LCS</td><td class="mono">100</td><td>99.0%</td><td>100.0%</td><td class="mono">0.08ms</td><td class="mono">5,562.54 QPS</td></tr>
+        <tr><td>100건</td><td>Elasticsearch</td><td class="mono">100</td><td>99.0%</td><td>99.0%</td><td class="mono">2.74ms</td><td class="mono">348.96 QPS</td></tr>
+        <tr><td>1만 건</td><td>LCS</td><td class="mono">100</td><td>100.0%</td><td>100.0%</td><td class="mono">3.96ms</td><td class="mono">241.22 QPS</td></tr>
+        <tr><td>1만 건</td><td>Elasticsearch</td><td class="mono">100</td><td>100.0%</td><td>100.0%</td><td class="mono">2.95ms</td><td class="mono">324.90 QPS</td></tr>
+        <tr><td>10만 건</td><td>LCS</td><td class="mono">100</td><td>95.0%</td><td>98.0%</td><td class="mono">46.31ms</td><td class="mono">21.11 QPS</td></tr>
+        <tr><td>10만 건</td><td>Elasticsearch</td><td class="mono">100</td><td>96.0%</td><td>98.0%</td><td class="mono">5.00ms</td><td class="mono">191.77 QPS</td></tr>
+        <tr><td>100만 건</td><td>LCS</td><td class="mono">100</td><td>84.0%</td><td>92.0%</td><td class="mono">478.09ms</td><td class="mono">2.07 QPS</td></tr>
+        <tr><td>100만 건</td><td>Elasticsearch</td><td class="mono">100</td><td>95.0%</td><td>99.0%</td><td class="mono">12.81ms</td><td class="mono">73.45 QPS</td></tr>
+        <tr><td>1천만 건</td><td>LCS</td><td class="mono">100</td><td>79.0%</td><td>89.0%</td><td class="mono">7,178.45ms</td><td class="mono">0.14 QPS</td></tr>
+        <tr><td>1천만 건</td><td>Elasticsearch</td><td class="mono">100</td><td>86.0%</td><td>97.0%</td><td class="mono">36.68ms</td><td class="mono">23.58 QPS</td></tr>
+        <tr><td>1천만 건</td><td>Elasticsearch</td><td class="mono">1,000</td><td>90.7%</td><td>97.7%</td><td class="mono">37.79ms</td><td class="mono">23.66 QPS</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="legend">질의 수는 그 행의 Top-1·p50을 낼 때 실제로 던진 검색어 개수입니다. &nbsp;·&nbsp; * 1천만 건 LCS는 한 질의만 완주한 참고값으로, 검색 품질 통계로 해석하지 않습니다. &nbsp;·&nbsp; 같은 첫 질의에서 Elasticsearch는 71.99ms였습니다.</p>
+  <p class="legend">질의 수는 그 행의 Top-1·p50을 낼 때 실제로 던진 검색어 개수입니다. 100인 행은 두 방식에 같은 앞 100개 질의를 넣은 직접 비교, 1,000인 행은 Elasticsearch 단독 측정입니다. 처리량(QPS)은 1초에 처리한 검색어 수입니다.</p>
 
 </div>
 </div>
@@ -6609,30 +6618,30 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--light">
   <div class="wrap">
     <p class="sectlabel">Trouble Shooting</p>
-    <h3 class="display-md">1천만 건에서 LCS 기준선을 어떻게 잴 것인가</h3>
+    <h3 class="display-md">기준선이 공정한가 — Python LCS가 만든 착시</h3>
     <div class="ts">
       <div class="tscard">
         <span class="tag tag--t">Trouble</span>
         <ul>
-          <li>1천만 건에서 LCS 한 질의가 965,045.68ms — 약 16분 5초</li>
-          <li>Elasticsearch와 같은 1,000질의를 순차 처리하면 단순 계산으로 약 11.2일</li>
-          <li>두 방식을 같은 표본 크기로 비교하는 것 자체가 불가능</li>
+          <li>첫 버전(Python)에서는 1천만 건 LCS 한 질의가 16분 5초, 교차점이 100건과 1만 건 사이로 나옴</li>
+          <li>1,000질의를 돌릴 수 없어 1질의 참고값만 남고, 두 방식을 같은 표본으로 비교하지 못함</li>
+          <li>그 차이가 알고리즘 때문인지 언어 때문인지 구분할 수 없었음</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--c">Cause</span>
         <ul>
           <li>LCS는 후보마다 문자열 전체를 비교해 비용이 후보 수에 선형 비례</li>
-          <li>1만 건에서 536.86ms였던 한 질의가 규모 1,000배에서 약 1,800배로 늘어남</li>
-          <li>Python 기준선 구현이라 상수 비용도 큼 — 의도적으로 최적화하지 않은 비교 기준</li>
+          <li>인터프리터 이중 루프 DP에, 질의마다 후보 alias를 다시 정규화하는 구현</li>
+          <li>Elasticsearch는 JVM 위에서 도는데 기준선만 Python — 비교 자체가 기울어져 있었음</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--s">Solution</span>
         <ul>
-          <li>--query-limit로 LCS는 1질의만 완주해 참고값으로 표기하고 정확도 통계로 해석하지 않음</li>
-          <li>Elasticsearch는 --skip-lcs로 1,000질의를 별도 측정해 p50·p95·Top-5를 확보</li>
-          <li>완주하지 못한 LCS 결과와 외삽값을 섞지 않고, 첫 질의 하나만 같은 조건(71.99ms vs 965,045.68ms)으로 직접 비교</li>
+          <li>Java 21로 전부 다시 작성 — CLI·결과 JSON 형식은 그대로, alias는 적재 시 한 번만 정규화, 두 행 int[] DP</li>
+          <li>1천만 건 LCS가 질의당 7.18초로 줄어 두 방식을 같은 100질의로 직접 비교</li>
+          <li>교차점이 1만 건 근처로 이동 — 「커지면 역색인」 결론은 유지되지만 근거 수치는 전부 교체</li>
         </ul>
       </div>
     </div>
@@ -6645,15 +6654,15 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     <div class="retro">
       <div class="rcard">
         <h4>규모가 커질수록 떨어지는 Top-1</h4>
-        <p>1만 건 1,000질의에서 99.2%였던 Elasticsearch Top-1이 1천만 건에서는 90.3%로 내려갔습니다. 후보가 늘어나면 유사한 주소도 함께 늘어 n-gram 점수만으로는 1위를 가르기 어려웠습니다.</p>
+        <p>1만 건 1,000질의에서 98.9%였던 Elasticsearch Top-1이 1천만 건에서는 90.7%로, LCS는 100%에서 79%로 내려갔습니다. 후보가 늘면 한 글자만 다른 주소가 함께 늘어, 길이 비율이나 gram 겹침만으로는 1위를 가르기 어려웠습니다.</p>
         <p class="lab">개선 방향</p>
-        <p>n-gram 역색인으로 후보를 좁힌 뒤 상위 후보에만 LCS나 도메인 규칙을 적용하는 2단계 재순위. Top-5는 97.1%이므로 후보군 안에서 다시 고르는 것이 다음 개선 대상입니다.</p>
+        <p>n-gram 역색인으로 후보를 좁힌 뒤 상위 후보에만 LCS나 도메인 규칙을 적용하는 2단계 재순위. Top-5는 97.7%이므로 후보군 안에서 다시 고르는 것이 다음 개선 대상입니다.</p>
       </div>
       <div class="rcard">
         <h4>초기 실측 1회의 한계</h4>
-        <p>각 조건을 한 번씩만 측정했고, 단일 노드 Elasticsearch(2GB heap)와 Python 기준선의 비교라 언어 최적화·샤드 수·캐시 상태에 따라 절대값은 달라질 수 있습니다.</p>
+        <p>각 조건을 한 번씩만 측정했고, Elasticsearch p50은 실행마다 2~5ms 사이에서 움직였습니다(JVM·HTTP 워밍업). 단일 노드 2GB heap이라 샤드 수·캐시 상태에 따라 절대값은 달라질 수 있습니다.</p>
         <p class="lab">개선 방향</p>
-        <p>같은 조건에서 최소 3회 반복해 분산과 신뢰구간을 붙이고, heap·샤드 수를 바꿔가며 100건과 1만 건 사이의 전환점이 어디인지 다시 확인.</p>
+        <p>같은 조건에서 최소 3회 반복해 분산과 신뢰구간을 붙이고, warm-up을 늘린 뒤 1만 건 근처의 교차점을 1천·3천·3만 건으로 더 촘촘히 확인.</p>
       </div>
     </div>
   </div>
@@ -6678,15 +6687,15 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 
     // 실측값 — results/*.json (seed 20260917 · 2026-09-17)
     const CASES = {
-      s100: { label: '100건', n: 100, lcs: 4.8519, es: 6.3834, kind: 'p50 · 질의 100', stagger: 9,
-        top: 'Top-1 LCS 98.0% · ES 99.0%', verdict: 'LCS가 1.32배 빠름', short: 'LCS 1.32배 빠름',
-        why: '후보 100건은 전수 탐색이 5ms도 안 걸립니다. 검색 엔진의 HTTP 호출과 고정 비용이 오히려 더 큽니다' },
-      s10k: { label: '1만 건', n: 10000, lcs: 536.8569, es: 4.5594, kind: 'p50 · 질의 100', stagger: 22,
-        top: 'Top-1 양쪽 97.0%', verdict: 'Elasticsearch가 117.8배 빠름', short: 'ES 117.8배 빠름',
-        why: 'LCS 한 요청이 0.54초라 동시 요청을 받기 어렵습니다. 역색인은 4.56ms로 100건 때와 거의 같습니다' },
-      s10m: { label: '1천만 건', n: 10000000, lcs: 965045.6775, es: 71.994, kind: '같은 첫 질의 1건', stagger: 42,
-        top: 'ES Top-5 97.1% (1,000질의)', verdict: 'Elasticsearch가 약 13,400배 빠름', short: 'ES 약 13,400배 빠름',
-        why: '전수 탐색 한 번이 16분이라 온라인 검색으로 쓸 수 없습니다. 역색인은 1천만 문서(약 2.17GB)에서도 72ms에 끝났습니다. LCS 정확도는 1질의 참고값입니다' }
+      s100: { label: '100건', n: 100, lcs: 0.0819, es: 2.7388, kind: '같은 100질의 p50', stagger: 9,
+        top: 'Top-1 양쪽 99.0%', verdict: 'LCS가 33배 빠름', short: 'LCS 33배 빠름',
+        why: '후보 100건은 전수 탐색이 0.1ms도 안 걸립니다. 검색 엔진은 HTTP 왕복과 고정 비용만으로 2~3ms를 씁니다' },
+      s10k: { label: '1만 건', n: 10000, lcs: 3.9647, es: 2.9475, kind: '같은 100질의 p50', stagger: 22,
+        top: 'Top-1 양쪽 100%', verdict: 'Elasticsearch가 1.35배 빠름 — 교차점', short: 'ES 1.35배 · 교차점',
+        why: '여기서 두 방식이 교차합니다. LCS는 후보 수에 비례해 4ms까지 올라왔고, 역색인은 100건 때와 거의 같은 3ms입니다' },
+      s10m: { label: '1천만 건', n: 10000000, lcs: 7178.4523, es: 36.6772, kind: '같은 100질의 p50', stagger: 42,
+        top: 'Top-5 ES 97.0% · LCS 89.0%', verdict: 'Elasticsearch가 약 196배 빠름', short: 'ES 약 196배 빠름',
+        why: '전수 탐색 한 번이 7초라 온라인 검색으로 쓸 수 없습니다. 역색인은 1천만 문서(약 1.8GB)에서도 37ms에 끝났습니다' }
     };
     let key = 's100';
 
