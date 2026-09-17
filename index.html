@@ -1765,6 +1765,28 @@
   .vf #rag-root .trow text{fill:var(--body-muted); font-family:var(--code); font-size:11px; font-weight:600; letter-spacing:0;}
   .vf #rag-root .trow.on text{fill:#fff;}
 
+  /* ---------- 주소 검색 시연 — 후보 점 · n-gram 칩 · Top-5 ---------- */
+  .vf #address-demos h4.sec + p{color:var(--body-muted); font-size:15px; line-height:1.6; margin:0 0 8px;}
+  .vf #ab-root .dot{fill:var(--hairline); transition:fill .22s, opacity .22s;}
+  .vf #ab-root .dot.scan{fill:var(--ink); transition:none;}
+  .vf #ab-root .dot.hit{fill:var(--primary);}
+  .vf #ab-root .dot.miss{fill:var(--hairline); opacity:.3;}
+  .vf #ab-root .dot.top{fill:var(--green);}
+  .vf #ab-root .trow rect{fill:var(--dia-node); stroke:var(--hairline); stroke-width:1; stroke-dasharray:4 4; transition:fill var(--t);}
+  .vf #ab-root .trow.on rect{fill:var(--green); stroke:none;}
+  .vf #ab-root .trow text{fill:var(--body-muted); font-family:var(--code); font-size:11px; font-weight:600; letter-spacing:0;}
+  .vf #ab-root .trow.on text{fill:#fff;}
+  .vf #ab-root .gram rect{fill:var(--dia-node); stroke:var(--hairline); stroke-width:1; opacity:0; transition:fill .2s, opacity .2s;}
+  .vf #ab-root .gram text{fill:var(--body-muted); font-family:var(--code); font-size:11px; font-weight:600; letter-spacing:0; opacity:0; transition:opacity .2s;}
+  .vf #ab-root .gram.show rect, .vf #ab-root .gram.show text{opacity:1;}
+  .vf #ab-root .gram.show.on rect{fill:var(--primary); stroke:none;}
+  .vf #ab-root .gram.show.on text{fill:#fff;}
+  .vf #ab-root .gram.show.bad rect{stroke:var(--bad); stroke-dasharray:3 3;}
+  .vf #ab-root .gram.show.bad text{fill:var(--bad); text-decoration:line-through;}
+  .vf #ab-root .node .q{fill:var(--ink); font-family:var(--code); font-size:12px; font-weight:600; letter-spacing:0;}
+  .vf #ab-root .node .q .e{fill:var(--bad);}
+  .vf #ab-root .node.on .q, .vf #ab-root .node.on .q .e{fill:var(--on-primary);}
+
   /* ---------- onAiR 시연 — 캔버스 ---------- */
   .vf #onair-demos h4.sec + p{color:var(--body-muted); font-size:15px; line-height:1.6; margin:0 0 8px;}
   .vf #ar-root canvas{width:100%; max-width:760px; display:block; margin:0 auto; border-radius:10px; background:#000; cursor:crosshair;}
@@ -1862,30 +1884,19 @@
     .vf h3{margin-top:40px;}
     .vf h4.sec{margin-top:48px;}
   }
-  /* Address benchmark — interactive execution trace */
-  .ab-stat-label{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;font-size:13px!important}
-  .ab-stat-label .pv{flex:0 0 auto}
-  .ab-demo{margin:0 0 72px;border:1px solid var(--line);border-radius:20px;padding:clamp(22px,4vw,42px);background:var(--surface)}
-  .ab-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:30px}
-  .ab-sizes{display:flex;gap:8px;flex-wrap:wrap}
-  .ab-sizes button,.ab-run{border:1px solid var(--line);border-radius:999px;padding:10px 17px;background:transparent;color:var(--ink);font:600 13px/1 var(--ui);cursor:pointer}
-  .ab-sizes button[aria-pressed="true"]{background:#f5f5f7;color:#1d1d1f;border-color:#f5f5f7}
-  .ab-run{background:var(--primary);border-color:var(--primary);color:#fff}
-  .ab-run:focus-visible,.ab-sizes button:focus-visible{outline:2px solid var(--primary-focus);outline-offset:3px}
-  .ab-lanes{display:grid;gap:18px}
-  .ab-lane{border:1px solid var(--line);border-radius:14px;padding:20px}
-  .ab-lane-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:15px}
-  .ab-lane-head strong{font-size:15px}.ab-time{font:600 13px/1 var(--mono);color:var(--body-mute)}
-  .ab-track{height:12px;border-radius:999px;background:var(--pearl);overflow:hidden;margin-bottom:14px}
-  .ab-fill{display:block;width:0;height:100%;border-radius:inherit;background:#8e8e93;transition-property:width;transition-timing-function:linear}
-  .ab-lane--es .ab-fill{background:var(--primary)}
-  .ab-route{display:flex;align-items:center;gap:7px;min-height:25px;flex-wrap:wrap;color:var(--body-mute);font-size:13px}
-  .ab-step{padding:5px 9px;border:1px solid var(--line);border-radius:8px;opacity:.38;transition:opacity .2s,background .2s,color .2s}
-  .ab-step.on{opacity:1;background:var(--pearl);color:var(--ink)}
-  .ab-arrow{opacity:.45}
-  .ab-status{margin:20px 0 0;color:var(--body);font-size:14px;min-height:24px}
-  .ab-caption{margin:9px 0 0;color:var(--body-mute);font-size:12px}
-  @media(max-width:620px){.ab-stat-label{white-space:normal}.ab-lane-head{align-items:flex-start;flex-direction:column}.ab-demo{border-radius:14px}.ab-route{gap:5px}.ab-step{font-size:12px}}
+  /* ---------- 주소 검색 벤치마크 — Intro·Contribution 삽화 ---------- */
+  .abfig{width:100%; height:auto; display:block; border-radius:18px; background:var(--parchment);}
+  .abfig text{font-family:inherit; font-size:13px; fill:var(--body-muted); letter-spacing:-.01em;}
+  .abfig .k{fill:var(--ink); font-weight:600;}
+  .abfig .hi{fill:var(--primary); font-weight:600;}
+  .abfig .mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,Menlo,monospace; font-size:12.5px;}
+  .abfig .box{fill:var(--canvas); stroke:var(--hairline);}
+  .abfig .bar{fill:var(--canvas); stroke:var(--hairline);}
+  .abfig .bar.on{fill:var(--primary); stroke:none;}
+  .abfig .chip{fill:var(--canvas); stroke:var(--hairline);}
+  .abfig .chip.on{fill:var(--primary); stroke:none;}
+  .abfig .chip.on + text{fill:#fff;}
+  .contrib__img .abfig{border-radius:0; background:var(--canvas);}
 </style>
 </head>
 <body>
@@ -1910,10 +1921,10 @@
     <span class="subnav__spacer"></span>
     <div class="subnav__links">
       <a href="#victoryfairy">승리요정</a>
-      <a href="#address-benchmark">주소 검색 벤치마크</a>
       <a href="#pookie">POOKIE</a>
       <a href="#yeon">연금술사</a>
       <a href="#onair">onAiR</a>
+      <a href="#address-benchmark">주소 검색 벤치마크</a>
     </div>
     <a class="btn btn--primary" style="padding:8px 18px;font-size:14px" href="mailto:doormoo2@naver.com">Contact</a>
   </div>
@@ -6293,188 +6304,558 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <div class="m"><span class="lbl">저장소</span><span class="val"><a href="https://github.com/ParkJaeHwan-906/address-matching-benchmark" target="_blank" rel="noopener">address-matching-benchmark</a></span></div>
       </div>
       <div class="btns">
-        <a class="btn btn--primary" href="#address-benchmark-result">실측 결과 보기</a>
+        <a class="btn btn--primary" href="#address-deep">실측 결과 보기</a>
         <a class="btn btn--ghost" href="https://github.com/ParkJaeHwan-906/address-matching-benchmark" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>
   </div>
 </section>
 
-<section class="tile tile--light tile--tight" id="address-benchmark-result">
-  <div class="wrap vf">
-    <p class="sectlabel">Measured Result</p>
+<section class="tile tile--light">
+  <div class="wrap">
+    <p class="sectlabel">Intro</p>
+    <h3 class="display-md">같은 질의, 두 가지 검색 경로</h3>
+    <div class="feat3">
+      <div class="feat">
+        <div class="device">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="표준 주소에 OCR 오류 규칙을 적용해 질의를 만들고 정답 ID를 보존하는 합성 생성기">
+            <text class="k" x="22" y="34">합성 주소 생성기</text>
+            <text x="22" y="54" style="font-size:11.5px">seed 20260917 · 개인정보 없음</text>
+            <rect class="box" x="22" y="72" width="276" height="34" rx="8"/>
+            <text class="mono" x="34" y="94"><tspan style="fill:var(--body-muted)">표준 </tspan><tspan class="k">서울특별시 강남구 테헤란로 152</tspan></text>
+            <rect class="box" x="22" y="114" width="276" height="34" rx="8"/>
+            <text class="mono" x="34" y="136"><tspan style="fill:var(--body-muted)">OCR  </tspan><tspan class="k">서울특</tspan><tspan class="hi">벌</tspan><tspan class="k">시 강남구 테헤란</tspan><tspan class="hi">노</tspan><tspan class="k"> 152</tspan></text>
+            <text x="22" y="176" style="font-size:12px">정답 ID를 보존 → Top-1 · Top-5 채점 기준</text>
+          </svg>
+        </div>
+        <h4>합성 데이터 생성</h4>
+        <p>표준 주소에 OCR 오류 규칙을 적용해 질의를 만듭니다. 같은 seed로 100건·1만 건·1천만 건을 생성하고 정답 ID로 채점합니다.</p>
+      </div>
+      <div class="feat">
+        <div class="device">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="LCS 전수 탐색은 모든 후보와 문자열을 비교하므로 비용이 후보 수에 선형 비례한다">
+            <text class="k" x="22" y="34">LCS 전수 탐색</text>
+            <text x="22" y="54" style="font-size:11.5px">모든 후보와 LCS 계산 · Python 기준선</text>
+            <rect class="bar" x="22" y="70" width="196" height="12" rx="6"/><text class="mono" x="232" y="80">LCS 27</text>
+            <rect class="bar on" x="22" y="90" width="248" height="12" rx="6"/><text class="mono hi" x="282" y="100">31</text>
+            <rect class="bar" x="22" y="110" width="128" height="12" rx="6"/><text class="mono" x="164" y="120">LCS 18</text>
+            <rect class="bar" x="22" y="130" width="172" height="12" rx="6"/><text class="mono" x="208" y="140">LCS 23</text>
+            <rect class="bar" x="22" y="150" width="96" height="12" rx="6"/><text class="mono" x="132" y="160">LCS 14 … × N</text>
+            <text x="22" y="184" style="font-size:12px">후보 N건을 전부 비교 → 비용 ∝ N</text>
+          </svg>
+        </div>
+        <h4>LCS 전수 탐색</h4>
+        <p>실무에서 쓰던 방식의 재구성입니다. 후보마다 최장 공통 부분열을 계산하므로 데이터가 늘어난 만큼 느려집니다.</p>
+      </div>
+      <div class="feat">
+        <div class="device">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="질의를 2~4-gram으로 분해하고 역색인에서 gram이 겹치는 문서만 후보로 모으는 Elasticsearch 검색">
+            <text class="k" x="22" y="34">Elasticsearch n-gram</text>
+            <text x="22" y="54" style="font-size:11.5px">2~4-gram 역색인 · Docker 단일 노드</text>
+            <g class="chips">
+              <rect class="chip on" x="22" y="70" width="44" height="24" rx="12"/><text class="mono" x="44" y="86" text-anchor="middle">서울</text>
+              <rect class="chip on" x="72" y="70" width="44" height="24" rx="12"/><text class="mono" x="94" y="86" text-anchor="middle">울특</text>
+              <rect class="chip" x="122" y="70" width="44" height="24" rx="12"/><text class="mono" x="144" y="86" text-anchor="middle">특벌</text>
+              <rect class="chip" x="172" y="70" width="44" height="24" rx="12"/><text class="mono" x="194" y="86" text-anchor="middle">벌시</text>
+              <rect class="chip on" x="222" y="70" width="56" height="24" rx="12"/><text class="mono" x="250" y="86" text-anchor="middle">서울특</text>
+              <rect class="chip on" x="22" y="102" width="56" height="24" rx="12"/><text class="mono" x="50" y="118" text-anchor="middle">강남구</text>
+              <rect class="chip on" x="84" y="102" width="68" height="24" rx="12"/><text class="mono" x="118" y="118" text-anchor="middle">테헤란</text>
+              <rect class="chip" x="158" y="102" width="56" height="24" rx="12"/><text class="mono" x="186" y="118" text-anchor="middle">헤란노</text>
+              <rect class="chip on" x="220" y="102" width="68" height="24" rx="12"/><text class="mono" x="254" y="118" text-anchor="middle">남구 테</text>
+            </g>
+            <text x="22" y="152" style="font-size:12px"><tspan class="hi">■</tspan> 역색인에 있는 gram → 겹치는 문서만 후보</text>
+            <text x="22" y="176" style="font-size:12px">전체 비교 없이 점수화 → Top-5</text>
+          </svg>
+        </div>
+        <h4>Elasticsearch n-gram</h4>
+        <p>질의를 2~4-gram으로 분해해 역색인에서 겹치는 문서만 후보로 모읍니다. 전체 후보 비교가 사라집니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tile tile--dark2">
+  <div class="wrap">
+    <p class="sectlabel">Contribution</p>
+    <div class="contrib contrib--rev">
+      <div class="contrib__img shot">
+        <svg class="abfig abfig--wide" viewBox="0 0 560 360" role="img" aria-label="generate, index, compare 세 명령으로 100건·1만 건·1천만 건 시나리오를 같은 절차로 실행하고 결과를 JSON으로 남기는 벤치마크 구조">
+          <text class="k" x="28" y="40" style="font-size:15px">address-bench — 한 CLI, 세 시나리오</text>
+          <g>
+            <rect class="box" x="28" y="64" width="150" height="58" rx="10"/>
+            <text class="mono k" x="44" y="88">generate</text>
+            <text x="44" y="108" style="font-size:11.5px">합성 주소 · 오류 질의</text>
+            <path d="M178 93 L204 93" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/><path d="M200 89 L206 93 L200 97" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <rect class="box" x="206" y="64" width="150" height="58" rx="10"/>
+            <text class="mono k" x="222" y="88">index</text>
+            <text x="222" y="108" style="font-size:11.5px">2~4-gram 색인 · --recreate</text>
+            <path d="M356 93 L382 93" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/><path d="M378 89 L384 93 L378 97" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <rect class="box" x="384" y="64" width="148" height="58" rx="10"/>
+            <text class="mono k" x="400" y="88">compare</text>
+            <text x="400" y="108" style="font-size:11.5px">LCS vs ES · 같은 질의</text>
+          </g>
+          <text class="k" x="28" y="158" style="font-size:12px;letter-spacing:.06em">시나리오</text>
+          <g style="font-size:12.5px">
+            <rect class="box" x="28" y="170" width="504" height="34" rx="8"/>
+            <text class="k" x="44" y="192">Tiny</text><text class="mono" x="120" y="192">100</text><text x="250" y="192">질의 100 · LCS · ES 직접 비교</text>
+            <rect class="box" x="28" y="210" width="504" height="34" rx="8"/>
+            <text class="k" x="44" y="232">Small</text><text class="mono" x="120" y="232">10,000</text><text x="250" y="232">질의 100 비교 · ES 1,000 별도</text>
+            <rect class="box" x="28" y="250" width="504" height="34" rx="8"/>
+            <text class="k" x="44" y="272">Large</text><text class="mono" x="120" y="272">10,000,000</text><text x="250" y="272">ES 1,000 · LCS 1 (--query-limit)</text>
+          </g>
+          <text class="k" x="28" y="318" style="font-size:12px;letter-spacing:.06em">측정 지표</text>
+          <text class="mono" x="28" y="340">Top-1 · Top-5 · MRR · p50 · p95 · p99 · QPS → results/*.json</text>
+        </svg>
+      </div>
+      <div class="contrib__text">
+        <div class="cblock">
+          <h4>재현 가능한 벤치마크 설계</h4>
+          <ul class="bul">
+            <li>개인정보 없는 합성 주소 생성기 — seed 20260917, 주소 ID별 고유 지번을 보장해 서로 다른 정답이 같은 문자열을 갖는 충돌 제거</li>
+            <li>100건·1만 건·1천만 건 세 시나리오를 같은 CLI(generate → index → compare)로 실행</li>
+            <li>Top-1·Top-5·MRR, p50·p95·p99, QPS를 정답 ID 기준으로 측정하고 원본 JSON을 그대로 보관</li>
+          </ul>
+        </div>
+        <div class="cblock">
+          <h4>두 검색 경로 구현·비교</h4>
+          <ul class="bul">
+            <li>LCS 전수 탐색 — 모든 후보와 LCS를 계산하는 Python 기준선. 실무에서 쓰던 방식을 그대로 재구성</li>
+            <li>Elasticsearch 2~4-gram 역색인 — Docker Compose 단일 노드(8.17.4 · 2GB heap)에 1천만 문서 색인, 약 2.17GB</li>
+            <li>완주하지 못한 LCS 결과는 외삽하지 않고 1질의 참고값으로만 표기 (--query-limit · --skip-lcs)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ADDRESS : Deep Dive (규모별 전환점 · 검색 경로 시연) ============ -->
+<section class="tile tile--light tile--tight" id="address-deep">
+  <div class="wrap">
+    <p class="sectlabel">Deep Dive</p>
     <h3 class="display-md">작을 때는 단순하게,<br>커지면 역색인으로.</h3>
-    <p class="lead">같은 seed와 오류 규칙으로 생성한 주소를 두 방식에 입력했습니다. 정확도는 정답 ID로, 속도는 p50·p95와 QPS로 측정했습니다.</p>
-
-    <h4 class="sec">규모별 전환점</h4>
-    <div class="stats">
-      <div class="stat">
-        <span class="lbl">100건 · LCS 우세 <span class="pv m">실측</span></span>
-        <span class="val">4.85<span class="u">ms</span></span>
-        <span class="note">Elasticsearch 6.38ms<br>작은 후보군에서는 전수 탐색이 1.32배 빠름</span>
-      </div>
-      <div class="stat vfhero">
-        <span class="lbl">1만 건 · Elasticsearch 우세 <span class="pv m">실측</span></span>
-        <span class="val">118<span class="u">배</span></span>
-        <span class="note">p50 4.56ms vs 536.86ms<br>Top-1 정확도는 양쪽 모두 97%</span>
-      </div>
-      <div class="stat vfhero">
-        <span class="lbl">1천만 건 · 동일 질의 <span class="pv m">실측</span></span>
-        <span class="val">13.4K<span class="u">배</span></span>
-        <span class="note">Elasticsearch 71.99ms<br>LCS 965,045.68ms · 약 16분 5초</span>
-      </div>
-      <div class="stat">
-        <span class="lbl ab-stat-label">1천만 건 · Elasticsearch Top-5 <span class="pv m">실측</span></span>
-        <span class="val">97.1<span class="u">%</span></span>
-        <span class="note">1,000개 질의 · p50 48.62ms<br>인덱스 10,000,000문서 · 약 2.17GB</span>
-      </div>
-    </div>
-
-    <h4 class="sec">검색 과정 시각화</h4>
-    <div class="ab-demo" id="ab-demo">
-      <div class="ab-controls">
-        <div class="ab-sizes" role="group" aria-label="매핑 데이터 규모">
-          <button type="button" data-size="100" aria-pressed="true">100건</button>
-          <button type="button" data-size="10000" aria-pressed="false">1만 건</button>
-          <button type="button" data-size="10000000" aria-pressed="false">1천만 건</button>
-        </div>
-        <button type="button" class="ab-run" id="ab-run">동일 질의 실행</button>
-      </div>
-
-      <div class="ab-lanes">
-        <div class="ab-lane ab-lane--lcs">
-          <div class="ab-lane-head"><strong>LCS 전수 탐색</strong><span class="ab-time" id="ab-lcs-time">4.85ms</span></div>
-          <div class="ab-track" aria-hidden="true"><span class="ab-fill" id="ab-lcs-fill"></span></div>
-          <div class="ab-route">
-            <span class="ab-step" data-lcs-step="0">질의 정규화</span><span class="ab-arrow">→</span>
-            <span class="ab-step" data-lcs-step="1">전체 100건 비교</span><span class="ab-arrow">→</span>
-            <span class="ab-step" data-lcs-step="2">Top-5 정렬</span>
-          </div>
-        </div>
-
-        <div class="ab-lane ab-lane--es">
-          <div class="ab-lane-head"><strong>Elasticsearch n-gram</strong><span class="ab-time" id="ab-es-time">6.38ms</span></div>
-          <div class="ab-track" aria-hidden="true"><span class="ab-fill" id="ab-es-fill"></span></div>
-          <div class="ab-route">
-            <span class="ab-step" data-es-step="0">2~4-gram 분해</span><span class="ab-arrow">→</span>
-            <span class="ab-step" data-es-step="1">역색인 조회</span><span class="ab-arrow">→</span>
-            <span class="ab-step" data-es-step="2">후보 점수화</span><span class="ab-arrow">→</span>
-            <span class="ab-step" data-es-step="3">Top-5 반환</span>
-          </div>
-        </div>
-      </div>
-      <p class="ab-status" id="ab-status" aria-live="polite">규모를 선택하고 동일 질의를 실행해 두 경로를 비교하세요.</p>
-      <p class="ab-caption">진행 애니메이션은 비교를 위해 최대 3초로 압축했습니다. 표시 시간은 실제 측정값입니다.</p>
-    </div>
-
-    <h4 class="sec">직접 비교</h4>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>매핑 데이터</th><th>방식</th><th>Top-1</th><th>Top-5</th><th>p50</th><th>처리량</th></tr></thead>
-        <tbody>
-          <tr><td>100건</td><td>LCS</td><td>98.0%</td><td>100.0%</td><td class="mono">4.85ms</td><td class="mono">203.33 QPS</td></tr>
-          <tr><td>100건</td><td>Elasticsearch</td><td>99.0%</td><td>99.0%</td><td class="mono">6.38ms</td><td class="mono">104.43 QPS</td></tr>
-          <tr><td>1만 건</td><td>LCS</td><td>97.0%</td><td>100.0%</td><td class="mono">536.86ms</td><td class="mono">1.87 QPS</td></tr>
-          <tr><td>1만 건</td><td>Elasticsearch</td><td>97.0%</td><td>99.0%</td><td class="mono">4.56ms</td><td class="mono">119.43 QPS</td></tr>
-          <tr><td>1천만 건</td><td>Elasticsearch</td><td>90.3%</td><td>97.1%</td><td class="mono">48.62ms</td><td class="mono">19.43 QPS</td></tr>
-          <tr><td>1천만 건</td><td>LCS · 1질의</td><td>100.0%</td><td>100.0%</td><td class="mono">965,045.68ms</td><td class="mono">0.00104 QPS</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h4 class="sec">설계 판단</h4>
-    <div class="ts">
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">같은 seed와 오류 규칙으로 만든 주소를 두 방식에 넣었습니다. 정확도는 정답 ID로, 속도는 p50·p95와 QPS로 재서 어디서부터 역색인이 이기는지 확인했습니다.</p>
+    <div class="ts" style="margin-top:32px">
       <div class="tscard">
-        <span class="tag tag--t">Problem</span>
+        <span class="tag tag--c">제약</span>
         <ul>
-          <li>LCS는 모든 주소 후보와 문자열을 비교해 데이터 규모에 선형 비례</li>
-          <li>1천만 건에서는 한 질의가 약 16분으로 온라인 요청 처리 불가</li>
+          <li>LCS는 모든 주소 후보와 문자열을 비교해 비용이 데이터 규모에 선형 비례</li>
+          <li>1천만 건에서는 한 질의가 약 16분 — 온라인 요청으로 처리 불가</li>
+          <li>실제 고객 주소는 쓸 수 없어 합성 데이터로 같은 조건을 재현</li>
         </ul>
       </div>
       <div class="tscard">
-        <span class="tag tag--c">Trade-off</span>
+        <span class="tag tag--t">판단</span>
         <ul>
-          <li>100건에서는 검색 엔진의 HTTP·고정 비용 때문에 LCS가 더 빠름</li>
-          <li>후보가 많아지면 유사 주소가 증가해 Elasticsearch Top-1 정확도 하락</li>
+          <li>100건에서는 검색 엔진의 HTTP·고정 비용 때문에 LCS가 1.32배 더 빠름</li>
+          <li>1만 건부터 역전 — p50 기준 Elasticsearch가 118배 빠르고 Top-1은 97%로 같음</li>
+          <li>후보가 많아지면 유사 주소가 늘어 Elasticsearch Top-1이 90.3%까지 하락</li>
         </ul>
       </div>
       <div class="tscard">
-        <span class="tag tag--s">Decision</span>
+        <span class="tag tag--s">선택</span>
         <ul>
           <li>작은 매핑 테이블은 LCS로 단순하게 유지</li>
-          <li>대규모는 n-gram으로 후보를 찾고 상위 후보만 LCS로 재순위</li>
+          <li>대규모는 n-gram 역색인으로 후보를 찾고 상위 후보만 LCS로 재순위</li>
+          <li>완주하지 못한 측정은 외삽하지 않고 참고값으로만 표기</li>
         </ul>
       </div>
     </div>
+  </div>
+</section>
 
-    <p class="legend"><span class="pv m">실측</span>개인정보 없는 합성 데이터 · seed 20260917 · 2026-09-17 측정</p>
+<div class="vf" id="address-demos" style="padding:0 0 96px">
+<div class="vfwrap">
+
+  <h4 class="sec" style="margin-top:0">대표 지표</h4>
+  <div class="stats">
+    <div class="stat">
+      <span class="lbl">100건 · LCS 우세 <span class="pv m">실측</span></span>
+      <span class="val">4.85<span class="u">ms</span></span>
+      <span class="note">Elasticsearch 6.38ms<br>작은 후보군에서는 전수 탐색이 1.32배 빠름</span>
+    </div>
+    <div class="stat vfhero">
+      <span class="lbl">1만 건 · ES 우세 <span class="pv m">실측</span></span>
+      <span class="val">118<span class="u">배</span></span>
+      <span class="note">p50 4.56ms vs 536.86ms<br>Top-1 정확도는 양쪽 모두 97%</span>
+    </div>
+    <div class="stat vfhero">
+      <span class="lbl">1천만 건 · 동일 질의 <span class="pv m">실측</span></span>
+      <span class="val">13.4K<span class="u">배</span></span>
+      <span class="note">Elasticsearch 71.99ms<br>LCS 965,045.68ms · 약 16분 5초</span>
+    </div>
+    <div class="stat">
+      <span class="lbl">1천만 건 · ES Top-5 <span class="pv m">실측</span></span>
+      <span class="val">97.1<span class="u">%</span></span>
+      <span class="note">1,000개 질의 · p50 48.62ms<br>인덱스 10,000,000문서 · 약 2.17GB</span>
+    </div>
+  </div>
+  <p class="legend"><span class="pv m">실측</span>직접 측정한 값 &nbsp;·&nbsp; 합성 데이터 seed 20260917 &nbsp;·&nbsp; 2026-09-17 · Windows 11 · Ryzen 5 5600 · Elasticsearch 8.17.4</p>
+
+  <h4 class="sec">시연 — 검색어 하나, 두 검색 경로</h4>
+  <p style="max-width:70ch">격자의 점은 매핑 테이블을 줄여 그린 것이고, 실제 후보 수는 고른 규모 그대로입니다. OCR 오류가 섞인 같은 검색어를 넣으면, LCS는 점을 전부 열어 보고 Elasticsearch는 검색어를 n-gram으로 쪼갠 뒤 역색인에 걸리는 점만 엽니다. 시간 표기는 모두 실측값입니다.</p>
+
+  <div class="demo flowdemo" id="ab-root">
+    <div class="demo-bar demo-bar--steps">
+      <div class="dstep">
+        <span class="dnum">1</span><span class="dlabel">규모 고르기</span>
+        <button type="button" class="opt" id="ab-s100" aria-pressed="true">100건</button>
+        <button type="button" class="opt" id="ab-s10k" aria-pressed="false">1만 건</button>
+        <button type="button" class="opt" id="ab-s10m" aria-pressed="false">1천만 건</button>
+      </div>
+      <div class="dstep">
+        <span class="dnum">2</span><span class="dlabel">재생</span>
+        <button type="button" class="run" id="ab-run">▶ 실행</button>
+        <button type="button" class="ghost" id="ab-reset">처음으로</button>
+      </div>
+      <p class="dhint">규모를 고르고 「▶ 실행」을 누르면 LCS가 후보를 전부 훑는 과정과 Elasticsearch가 n-gram으로 일부만 여는 과정이 차례로 진행되고, 아래 로그에 실측 시간이 찍힙니다.</p>
+    </div>
+
+    <div class="demo-pane">
+      <h5>검색 경로 <span id="ab-progress">0 / 0</span></h5>
+      <div class="fig-scroll">
+        <svg id="ab-svg" viewBox="-16 0 776 506" role="img"
+             aria-label="OCR 오류가 섞인 검색어 하나가 위쪽 LCS 경로와 아래쪽 Elasticsearch 경로로 들어간다. LCS는 매핑 테이블의 후보 점을 전부 차례로 열어 보고 Top-5를 정렬한다. Elasticsearch는 검색어를 2-gram 칩으로 쪼개고, 역색인에 있는 칩이 가리키는 점만 켜서 그 후보만 점수화해 Top-5를 낸다. 왼쪽 아래 노드에 두 방식의 실측 시간이 표시된다.">
+          <defs>
+            <marker id="abm" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto">
+              <polygon points="0,0 10,4 0,8" fill="currentColor"/></marker>
+          </defs>
+
+          <rect class="zonebox" x="160" y="16" width="420" height="192" rx="8"/>
+          <text class="wlabel" x="172" y="36">LCS 전수 탐색</text>
+          <text class="wlabel" id="ab-n1" x="568" y="36" text-anchor="end">100건 전부 열어 봄</text>
+          <text class="sline" id="ab-c1" x="172" y="194"></text>
+
+          <rect class="zonebox" x="600" y="16" width="148" height="192" rx="8"/>
+          <text class="wlabel" x="610" y="36">Top-5 · LCS</text>
+
+          <rect class="zonebox" x="160" y="236" width="420" height="254" rx="8"/>
+          <text class="wlabel" x="172" y="256">Elasticsearch — 2~4-gram 역색인</text>
+          <text class="wlabel" id="ab-n2" x="568" y="256" text-anchor="end">100건 중 겹치는 것만</text>
+          <text class="wlabel" id="ab-gnote" x="172" y="334" style="font-size:11px"></text>
+          <text class="sline" id="ab-c2" x="172" y="476"></text>
+
+          <rect class="zonebox" x="600" y="236" width="148" height="254" rx="8"/>
+          <text class="wlabel" x="610" y="256">Top-5 · Elasticsearch</text>
+
+          <line class="wire" id="ab-w1" x1="136" y1="84" x2="160" y2="84" marker-end="url(#abm)"/>
+          <polyline class="wire" id="ab-w2" points="136,110 148,110 148,356 160,356" marker-end="url(#abm)"/>
+          <line class="wire" id="ab-w3" x1="580" y1="112" x2="600" y2="112" marker-end="url(#abm)"/>
+          <line class="wire" id="ab-w4" x1="580" y1="356" x2="600" y2="356" marker-end="url(#abm)"/>
+
+          <g class="node" id="ab-q">
+            <rect x="-12" y="40" width="148" height="94" rx="3"/>
+            <text class="ntitle" x="0" y="62">검색어 · OCR 결과</text>
+            <text class="q" x="0" y="84">서울특<tspan class="e">벌</tspan>시 강남구</text>
+            <text class="q" x="0" y="102">테헤란<tspan class="e">노</tspan> 152</text>
+            <text class="nsub" x="0" y="122">오탈자 2곳 · 정답 있음</text>
+          </g>
+
+          <g id="ab-all"></g>
+          <g id="ab-grams"></g>
+          <g id="ab-idx"></g>
+
+          <g id="ab-top1">
+            <g class="trow" id="ab-r0"><rect x="610" y="50" width="128" height="24" rx="6"/><text x="618" y="66"></text></g>
+            <g class="trow" id="ab-r1"><rect x="610" y="80" width="128" height="24" rx="6"/><text x="618" y="96"></text></g>
+            <g class="trow" id="ab-r2"><rect x="610" y="110" width="128" height="24" rx="6"/><text x="618" y="126"></text></g>
+            <g class="trow" id="ab-r3"><rect x="610" y="140" width="128" height="24" rx="6"/><text x="618" y="156"></text></g>
+            <g class="trow" id="ab-r4"><rect x="610" y="170" width="128" height="24" rx="6"/><text x="618" y="186"></text></g>
+          </g>
+          <g id="ab-top2">
+            <g class="trow" id="ab-e0"><rect x="610" y="270" width="128" height="24" rx="6"/><text x="618" y="286"></text></g>
+            <g class="trow" id="ab-e1"><rect x="610" y="300" width="128" height="24" rx="6"/><text x="618" y="316"></text></g>
+            <g class="trow" id="ab-e2"><rect x="610" y="330" width="128" height="24" rx="6"/><text x="618" y="346"></text></g>
+            <g class="trow" id="ab-e3"><rect x="610" y="360" width="128" height="24" rx="6"/><text x="618" y="376"></text></g>
+            <g class="trow" id="ab-e4"><rect x="610" y="390" width="128" height="24" rx="6"/><text x="618" y="406"></text></g>
+          </g>
+
+          <g class="node" id="ab-res">
+            <rect x="-12" y="236" width="148" height="104" rx="3"/>
+            <text class="ntitle" x="0" y="258">실측 비교</text>
+            <text class="msg" id="ab-m1" x="0" y="280"></text>
+            <text class="msg" id="ab-m2" x="0" y="298"></text>
+            <text class="msg" id="ab-m3" x="0" y="322"></text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="demo-pane stagewrap">
+      <h5>처리 로그</h5>
+      <ol class="stagelog" id="ab-log"></ol>
+    </div>
+  </div>
+
+  <h4 class="sec">직접 비교</h4>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>매핑 데이터</th><th>방식</th><th>질의 수</th><th>Top-1</th><th>Top-5</th><th>p50</th><th>처리량</th></tr></thead>
+      <tbody>
+        <tr><td>100건</td><td>LCS</td><td class="mono">100</td><td>98.0%</td><td>100.0%</td><td class="mono">4.85ms</td><td class="mono">203.33 QPS</td></tr>
+        <tr><td>100건</td><td>Elasticsearch</td><td class="mono">100</td><td>99.0%</td><td>99.0%</td><td class="mono">6.38ms</td><td class="mono">104.43 QPS</td></tr>
+        <tr><td>1만 건</td><td>LCS</td><td class="mono">100</td><td>97.0%</td><td>100.0%</td><td class="mono">536.86ms</td><td class="mono">1.87 QPS</td></tr>
+        <tr><td>1만 건</td><td>Elasticsearch</td><td class="mono">100</td><td>97.0%</td><td>99.0%</td><td class="mono">4.56ms</td><td class="mono">119.43 QPS</td></tr>
+        <tr><td>1천만 건</td><td>Elasticsearch</td><td class="mono">1,000</td><td>90.3%</td><td>97.1%</td><td class="mono">48.62ms</td><td class="mono">19.43 QPS</td></tr>
+        <tr><td>1천만 건</td><td>LCS</td><td class="mono">1</td><td>100%*</td><td>100%*</td><td class="mono">965,045.68ms</td><td class="mono">0.00104 QPS</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="legend">질의 수는 그 행의 Top-1·p50을 낼 때 실제로 던진 검색어 개수입니다. &nbsp;·&nbsp; * 1천만 건 LCS는 한 질의만 완주한 참고값으로, 검색 품질 통계로 해석하지 않습니다. &nbsp;·&nbsp; 같은 첫 질의에서 Elasticsearch는 71.99ms였습니다.</p>
+
+</div>
+</div>
+
+<section class="tile tile--light">
+  <div class="wrap">
+    <p class="sectlabel">Trouble Shooting</p>
+    <h3 class="display-md">1천만 건에서 LCS 기준선을 어떻게 잴 것인가</h3>
+    <div class="ts">
+      <div class="tscard">
+        <span class="tag tag--t">Trouble</span>
+        <ul>
+          <li>1천만 건에서 LCS 한 질의가 965,045.68ms — 약 16분 5초</li>
+          <li>Elasticsearch와 같은 1,000질의를 순차 처리하면 단순 계산으로 약 11.2일</li>
+          <li>두 방식을 같은 표본 크기로 비교하는 것 자체가 불가능</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--c">Cause</span>
+        <ul>
+          <li>LCS는 후보마다 문자열 전체를 비교해 비용이 후보 수에 선형 비례</li>
+          <li>1만 건에서 536.86ms였던 한 질의가 규모 1,000배에서 약 1,800배로 늘어남</li>
+          <li>Python 기준선 구현이라 상수 비용도 큼 — 의도적으로 최적화하지 않은 비교 기준</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--s">Solution</span>
+        <ul>
+          <li>--query-limit로 LCS는 1질의만 완주해 참고값으로 표기하고 정확도 통계로 해석하지 않음</li>
+          <li>Elasticsearch는 --skip-lcs로 1,000질의를 별도 측정해 p50·p95·Top-5를 확보</li>
+          <li>완주하지 못한 LCS 결과와 외삽값을 섞지 않고, 첫 질의 하나만 같은 조건(71.99ms vs 965,045.68ms)으로 직접 비교</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tile tile--parchment">
+  <div class="wrap">
+    <p class="sectlabel">Retrospect</p>
+    <div class="retro">
+      <div class="rcard">
+        <h4>규모가 커질수록 떨어지는 Top-1</h4>
+        <p>1만 건 1,000질의에서 99.2%였던 Elasticsearch Top-1이 1천만 건에서는 90.3%로 내려갔습니다. 후보가 늘어나면 유사한 주소도 함께 늘어 n-gram 점수만으로는 1위를 가르기 어려웠습니다.</p>
+        <p class="lab">개선 방향</p>
+        <p>n-gram 역색인으로 후보를 좁힌 뒤 상위 후보에만 LCS나 도메인 규칙을 적용하는 2단계 재순위. Top-5는 97.1%이므로 후보군 안에서 다시 고르는 것이 다음 개선 대상입니다.</p>
+      </div>
+      <div class="rcard">
+        <h4>초기 실측 1회의 한계</h4>
+        <p>각 조건을 한 번씩만 측정했고, 단일 노드 Elasticsearch(2GB heap)와 Python 기준선의 비교라 언어 최적화·샤드 수·캐시 상태에 따라 절대값은 달라질 수 있습니다.</p>
+        <p class="lab">개선 방향</p>
+        <p>같은 조건에서 최소 3회 반복해 분산과 신뢰구간을 붙이고, heap·샤드 수를 바꿔가며 100건과 1만 건 사이의 전환점이 어디인지 다시 확인.</p>
+      </div>
+    </div>
   </div>
 </section>
 
 </div>
 
 <script>
-  (function(){
-    var root = document.getElementById('ab-demo');
-    if (!root) return;
-    var cases = {
-      '100': { label:'100건', lcs:4.8519, es:6.3834, candidates:'전체 100건 비교' },
-      '10000': { label:'1만 건', lcs:536.8569, es:4.5594, candidates:'전체 10,000건 비교' },
-      '10000000': { label:'1천만 건', lcs:965045.6775, es:71.994, candidates:'전체 10,000,000건 비교' }
-    };
-    var selected = '100', runId = 0;
-    var sizeButtons = Array.prototype.slice.call(root.querySelectorAll('[data-size]'));
-    var lcsFill = root.querySelector('#ab-lcs-fill'), esFill = root.querySelector('#ab-es-fill');
-    var lcsTime = root.querySelector('#ab-lcs-time'), esTime = root.querySelector('#ab-es-time');
-    var status = root.querySelector('#ab-status');
-    var lcsSteps = Array.prototype.slice.call(root.querySelectorAll('[data-lcs-step]'));
-    var esSteps = Array.prototype.slice.call(root.querySelectorAll('[data-es-step]'));
+  // ── 주소 검색 시연 · 검색어 하나, 두 검색 경로 ──────────────────────
+  // 연금술사 시연과 같은 엔진(pkFlow)이다. 점 70개를 매핑 테이블의 주소 후보로 두고,
+  // LCS는 점을 전부 차례로 열어 보고, Elasticsearch는 검색어를 2-gram 칩으로 쪼갠 뒤
+  // 역색인에 있는 칩이 가리키는 점만 켠다. 시간 표기는 docs/BENCHMARK_RESULTS.md 실측값이다.
+  (function () {
+    const ROOT = document.getElementById('ab-root');
+    if (!ROOT || !window.pkFlow) return;
+    const F = window.pkFlow(ROOT, 'ab-svg', 'ab-log', 'ab-progress');
+    const NS = 'http://www.w3.org/2000/svg';
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const c1 = ROOT.querySelector('#ab-c1'), c2 = ROOT.querySelector('#ab-c2');
+    const n1 = ROOT.querySelector('#ab-n1'), n2 = ROOT.querySelector('#ab-n2');
+    const gnote = ROOT.querySelector('#ab-gnote');
 
-    function fmt(ms){ return ms >= 60000 ? (ms / 60000).toFixed(1) + '분' : (ms >= 1000 ? (ms / 1000).toFixed(2) + '초' : ms.toFixed(2) + 'ms'); }
-    function reset(){
-      runId += 1;
-      lcsFill.style.transitionDuration = '0ms'; esFill.style.transitionDuration = '0ms';
-      lcsFill.style.width = '0'; esFill.style.width = '0';
-      lcsSteps.concat(esSteps).forEach(function(s){ s.classList.remove('on'); });
-      var c = cases[selected];
-      lcsTime.textContent = fmt(c.lcs); esTime.textContent = fmt(c.es);
-      lcsSteps[1].textContent = c.candidates;
-      status.textContent = c.label + ' 매핑 테이블이 선택됐습니다.';
+    // 실측값 — results/*.json (seed 20260917 · 2026-09-17)
+    const CASES = {
+      s100: { label: '100건', n: 100, lcs: 4.8519, es: 6.3834, kind: 'p50 · 질의 100', stagger: 9,
+        top: 'Top-1 LCS 98.0% · ES 99.0%', verdict: 'LCS가 1.32배 빠름', short: 'LCS 1.32배 빠름',
+        why: '후보 100건은 전수 탐색이 5ms도 안 걸립니다. 검색 엔진의 HTTP 호출과 고정 비용이 오히려 더 큽니다' },
+      s10k: { label: '1만 건', n: 10000, lcs: 536.8569, es: 4.5594, kind: 'p50 · 질의 100', stagger: 22,
+        top: 'Top-1 양쪽 97.0%', verdict: 'Elasticsearch가 117.8배 빠름', short: 'ES 117.8배 빠름',
+        why: 'LCS 한 요청이 0.54초라 동시 요청을 받기 어렵습니다. 역색인은 4.56ms로 100건 때와 거의 같습니다' },
+      s10m: { label: '1천만 건', n: 10000000, lcs: 965045.6775, es: 71.994, kind: '같은 첫 질의 1건', stagger: 42,
+        top: 'ES Top-5 97.1% (1,000질의)', verdict: 'Elasticsearch가 약 13,400배 빠름', short: 'ES 약 13,400배 빠름',
+        why: '전수 탐색 한 번이 16분이라 온라인 검색으로 쓸 수 없습니다. 역색인은 1천만 문서(약 2.17GB)에서도 72ms에 끝났습니다. LCS 정확도는 1질의 참고값입니다' }
+    };
+    let key = 's100';
+
+    const fmtInt = n => n.toLocaleString('en-US');
+    const fmtMs = ms => ms >= 60000
+      ? Math.floor(ms / 60000) + '분 ' + Math.round((ms % 60000) / 1000) + '초'
+      : (ms >= 1000 ? (ms / 1000).toFixed(2) + '초' : ms.toFixed(2) + 'ms');
+    const fmtRaw = ms => fmtInt(Math.round(ms * 100) / 100) + 'ms';
+
+    // 점 격자 — 두 경로 모두 14×5 = 70개. 같은 매핑 테이블을 두 번 그린 것이다
+    function grid(g, cols, rows, x0, y0, dx, dy) {
+      g.innerHTML = '';
+      const dots = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const d = document.createElementNS(NS, 'circle');
+        d.setAttribute('cx', x0 + c * dx); d.setAttribute('cy', y0 + r * dy);
+        d.setAttribute('r', '4.5'); d.setAttribute('class', 'dot');
+        g.appendChild(d); dots.push(d);
+      }
+      return dots;
     }
-    function later(mine, delay, fn){ setTimeout(function(){ if (mine === runId) fn(); }, delay); }
-    function run(){
-      reset();
-      var mine = runId, c = cases[selected], slow = Math.max(c.lcs, c.es);
-      var lcsDuration = Math.max(260, 2800 * c.lcs / slow);
-      var esDuration = Math.max(260, 2800 * c.es / slow);
-      status.textContent = '같은 OCR 오류 문자열을 두 검색 방식에 동시에 입력했습니다.';
-      requestAnimationFrame(function(){
-        if (mine !== runId) return;
-        lcsFill.style.transitionDuration = lcsDuration + 'ms'; esFill.style.transitionDuration = esDuration + 'ms';
-        lcsFill.style.width = '100%'; esFill.style.width = '100%';
-      });
-      [0,.2,.82].forEach(function(r,i){ later(mine, Math.round(lcsDuration*r), function(){ lcsSteps[i].classList.add('on'); }); });
-      [0,.18,.48,.82].forEach(function(r,i){ later(mine, Math.round(esDuration*r), function(){ esSteps[i].classList.add('on'); }); });
-      later(mine, Math.min(lcsDuration, esDuration), function(){
-        var winner = c.lcs < c.es ? 'LCS' : 'Elasticsearch';
-        status.textContent = winner + '가 먼저 완료됐습니다. ' + (winner === 'LCS' ? '후보가 작아 전수 탐색의 고정 비용이 낮습니다.' : '역색인이 전체 후보 비교를 제거했습니다.');
-      });
-      later(mine, Math.max(lcsDuration, esDuration) + 60, function(){
-        var ratio = Math.max(c.lcs, c.es) / Math.min(c.lcs, c.es);
-        status.textContent = '완료 — ' + (c.lcs < c.es ? 'LCS' : 'Elasticsearch') + '가 약 ' + (ratio >= 1000 ? (ratio/1000).toFixed(1) + 'K' : ratio.toFixed(2)) + '배 빨랐습니다.';
-      });
-    }
-    sizeButtons.forEach(function(button){
-      button.addEventListener('click', function(){
-        selected = button.dataset.size;
-        sizeButtons.forEach(function(b){ b.setAttribute('aria-pressed', b === button ? 'true' : 'false'); });
-        reset();
-      });
+    const ALL = grid(ROOT.querySelector('#ab-all'), 14, 5, 180, 60, 28, 24);
+    const IDX = grid(ROOT.querySelector('#ab-idx'), 14, 5, 180, 352, 28, 24);
+    const ROWS1 = [0, 1, 2, 3, 4].map(i => ROOT.querySelector('#ab-r' + i));
+    const ROWS2 = [0, 1, 2, 3, 4].map(i => ROOT.querySelector('#ab-e' + i));
+
+    // 검색어를 단어별 2-gram으로 쪼갠다. 오탈자(벌·노)가 든 gram은 색인에 없다
+    const QUERY = ['서울특벌시', '강남구', '테헤란노', '152'];
+    const WRONG = ['벌', '노'];
+    const GRAMS = [];
+    QUERY.forEach(w => { for (let i = 0; i + 2 <= w.length; i++) { const g = w.slice(i, i + 2); GRAMS.push({ g, bad: WRONG.some(ch => g.indexOf(ch) >= 0) }); } });
+    const gramsG = ROOT.querySelector('#ab-grams');
+    const CHIPS = GRAMS.map((it, i) => {
+      const col = i % 8, row = Math.floor(i / 8);
+      const x = 172 + col * 48, y = 268 + row * 28;
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'gram' + (it.bad ? ' bad' : ' on'));
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', 42); r.setAttribute('height', 22); r.setAttribute('rx', 11);
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', x + 21); t.setAttribute('y', y + 15); t.setAttribute('text-anchor', 'middle'); t.textContent = it.g;
+      g.appendChild(r); g.appendChild(t); gramsG.appendChild(g);
+      return g;
     });
-    root.querySelector('#ab-run').addEventListener('click', run);
-    reset();
+    const GOOD = GRAMS.filter(g => !g.bad).length, BAD = GRAMS.length - GOOD;
+
+    // 매 실행마다 같은 그림이 나오도록 고정 시드 난수
+    function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+    function pick(n, k, rand) {
+      const idx = [...Array(n).keys()];
+      for (let i = n - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      return idx.slice(0, k);
+    }
+
+    // 항목을 순서대로 하나씩 처리한다. stagger 가 속도다. 시간 기반(rAF)이라 정해진 시간 안에 끝난다
+    function sweep(items, stagger, onPass, onTick, mine) {
+      return new Promise(resolve => {
+        const n = items.length;
+        const end = () => { for (let k = 0; k < n; k++) onPass(k, true); onTick(n); };
+        if (still.matches) { end(); resolve(true); return; }
+        const total = n * stagger;
+        let done = false, last = -1;
+        const finish = ok => { if (done) return; done = true; clearTimeout(guard); end(); resolve(ok); };
+        const guard = setTimeout(() => finish(true), total + 800);
+        const t0 = performance.now();
+        function frame(t) {
+          if (done) return;
+          if (mine !== F.runId) { finish(false); return; }
+          const i = Math.min(n - 1, Math.floor((t - t0) / stagger));
+          for (let k = last + 1; k <= i; k++) onPass(k, false);
+          last = i;
+          onTick(i + 1);
+          if (t - t0 < total) requestAnimationFrame(frame); else finish(true);
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    function resetBoard() {
+      ALL.forEach(d => d.setAttribute('class', 'dot'));
+      IDX.forEach(d => d.setAttribute('class', 'dot'));
+      CHIPS.forEach(g => g.classList.remove('show'));
+      ROWS1.concat(ROWS2).forEach(r => { r.classList.remove('on'); r.querySelector('text').textContent = ''; });
+      c1.textContent = ''; c2.textContent = ''; gnote.textContent = '';
+      c1.classList.remove('g'); c2.classList.remove('g');
+      const c = CASES[key];
+      n1.textContent = fmtInt(c.n) + '건 전부 열어 봄';
+      n2.textContent = fmtInt(c.n) + '건 중 겹치는 것만';
+      F.msg('ab-m1', ''); F.msg('ab-m2', ''); F.msg('ab-m3', '');
+    }
+
+    function buildSteps() {
+      const c = CASES[key];
+      const rand = rng(20260917);
+      const hits = pick(ALL.length, 7, rand);          // 역색인에 걸린 후보 7개 (격자 인덱스)
+      const top = hits.slice(0, 5);                     // 그중 Top-5 — 두 방식이 같은 정답을 1위로 낸다
+      const hitSet = new Set(hits), topSet = new Set(top);
+      const label = (r, i) => (r + 1) + '위 · #' + (i + 1) + (r === 0 ? ' ✓ 정답 ID' : '');
+      return [
+        {
+          st: '검색어 입력 — 「서울특벌시 강남구 테헤란노 152」 · 매핑 테이블 ' + c.label,
+          sd: 'OCR이 「별→벌」「로→노」 두 글자를 잘못 읽은 문자열입니다. 합성 데이터라 정답 ID를 알고 있어 Top-1·Top-5를 채점할 수 있습니다. 같은 검색어를 두 경로에 넣습니다',
+          nodes: ['ab-q'], wires: ['ab-w1', 'ab-w2'],
+          phases: [[[[136, 84], [160, 84]], [[136, 110], [148, 110], [148, 356], [160, 356]]]],
+          before() { resetBoard(); }
+        },
+        {
+          st: 'LCS — 정규화 후 후보 ' + fmtInt(c.n) + '건을 전부 열어 LCS 계산 (' + fmtRaw(c.lcs) + ' · ' + c.kind + ')',
+          sd: '검색어와 후보 문자열의 최장 공통 부분열을 후보마다 계산합니다. 건너뛸 방법이 없어 마지막 점까지 전부 봅니다. 비용은 후보 수에 그대로 비례해 ' + c.label + '에서 ' + fmtMs(c.lcs) + '가 걸렸습니다',
+          nodes: [], wires: [],
+          phases: [{ run: mine => sweep(ALL, c.stagger,
+            (k, instant) => { const d = ALL[k]; d.classList.remove('scan'); d.classList.add('miss'); if (!instant) { d.classList.add('scan'); d.classList.remove('miss'); if (k - 3 >= 0) { ALL[k - 3].classList.remove('scan'); ALL[k - 3].classList.add('miss'); } } },
+            k => { c1.textContent = 'LCS 계산 ' + fmtInt(Math.round(c.n * k / ALL.length)) + ' / ' + fmtInt(c.n) + '건'; }, mine) }],
+          after() { ALL.forEach(d => { d.classList.remove('scan'); d.classList.add('miss'); }); c1.textContent = fmtInt(c.n) + '건 전부 비교 · ' + fmtMs(c.lcs); c1.classList.add('g'); }
+        },
+        {
+          st: 'LCS 점수 내림차순 정렬 → Top-5',
+          sd: '전부 계산한 뒤에야 정렬할 수 있습니다. 정답이 1위로 올라왔지만, 그 답을 얻기 위해 후보 전체를 한 번씩 다 읽은 뒤입니다',
+          nodes: [], wires: ['ab-w3'], phases: [[[[580, 112], [600, 112]]]],
+          after() {
+            ALL.forEach((d, i) => { if (topSet.has(i)) { d.classList.remove('miss'); d.classList.add('top'); } });
+            top.forEach((i, r) => { ROWS1[r].classList.add('on'); ROWS1[r].querySelector('text').textContent = label(r, i); });
+          }
+        },
+        {
+          st: 'Elasticsearch — 검색어를 2~4-gram으로 분해 · 색인에 있는 gram ' + GOOD + '개, 오탈자 gram ' + BAD + '개',
+          sd: '「서울」「울특」처럼 두 글자씩 잘라 역색인의 키로 씁니다. 「특벌」「벌시」「란노」처럼 오탈자가 든 gram은 색인에 없어 버려지지만, 나머지 gram만으로도 정답 문서에 닿습니다. 그림은 2-gram만 표시했고 3·4-gram도 같은 방식입니다',
+          nodes: [], wires: [],
+          phases: [{ run: mine => sweep(CHIPS, 90, k => CHIPS[k].classList.add('show'), k => { gnote.textContent = '2-gram ' + k + ' / ' + CHIPS.length + ' · 파란 칩만 역색인 조회'; }, mine) }],
+          after() { gnote.textContent = '색인에 있는 gram ' + GOOD + '개로 조회 · 오탈자 gram ' + BAD + '개는 버림 (3·4-gram 생략)'; }
+        },
+        {
+          st: '역색인 조회 — gram이 겹치는 후보만 켜짐 · 나머지는 열지 않음',
+          sd: '역색인은 gram → 문서 목록을 미리 갖고 있어, 검색어의 gram이 가리키는 문서만 후보로 모읍니다. 위 LCS 격자와 달리 대부분의 점은 손도 대지 않습니다. 후보가 ' + c.label + '으로 늘어도 열어 보는 문서 수는 gram이 겹치는 만큼만 늘어납니다',
+          nodes: [], wires: [],
+          phases: [{ run: mine => sweep(hits, 130, k => IDX[hits[k]].classList.add('hit'), k => { c2.textContent = '역색인 조회 → gram이 겹치는 후보만 모으는 중'; }, mine) }],
+          after() { c2.textContent = '겹치는 후보만 점수화 · ' + fmtMs(c.es); c2.classList.add('g'); }
+        },
+        {
+          st: '후보 점수화 → Top-5 (' + fmtRaw(c.es) + ' · ' + c.kind + ')',
+          sd: '켜진 후보에만 점수를 매겨 정렬합니다. 전체 비교가 사라졌으므로 ' + c.label + '에서도 ' + fmtMs(c.es) + '에 끝났습니다',
+          nodes: [], wires: ['ab-w4'], phases: [[[[580, 356], [600, 356]]]],
+          after() {
+            IDX.forEach((d, i) => { if (topSet.has(i)) { d.classList.remove('hit'); d.classList.add('top'); } });
+            top.forEach((i, r) => { ROWS2[r].classList.add('on'); ROWS2[r].querySelector('text').textContent = label(r, i); });
+          }
+        },
+        {
+          st: '실측 비교 — ' + c.verdict + ' · ' + c.top,
+          sd: c.why,
+          nodes: ['ab-res'], wires: [], phases: [], hold: 1000,
+          after() { F.msg('ab-m1', 'LCS ' + fmtMs(c.lcs)); F.msg('ab-m2', 'ES ' + fmtMs(c.es)); F.msg('ab-m3', c.short); }
+        }
+      ];
+    }
+
+    function idle() { resetBoard(); F.idle(buildSteps()); }
+    const opts = { s100: ROOT.querySelector('#ab-s100'), s10k: ROOT.querySelector('#ab-s10k'), s10m: ROOT.querySelector('#ab-s10m') };
+    Object.keys(opts).forEach(k => opts[k].addEventListener('click', () => {
+      key = k;
+      Object.keys(opts).forEach(j => opts[j].setAttribute('aria-pressed', j === k ? 'true' : 'false'));
+      idle();
+    }));
+    ROOT.querySelector('#ab-run').addEventListener('click', () => { resetBoard(); F.play(buildSteps()); });
+    ROOT.querySelector('#ab-reset').addEventListener('click', idle);
+    idle();
   })();
 </script>
+
 
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
