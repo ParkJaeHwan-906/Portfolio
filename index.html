@@ -6790,12 +6790,10 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
           </ul>
         </div>
         <div class="cblock">
-          <h4>정합성 장치와 검증</h4>
+          <h4>정합성 장치</h4>
           <ul class="bul">
             <li>모든 전략에 Idempotency-Key — DB unique(account, key)로 재요청은 같은 주문을 돌려줌</li>
             <li>재고 복구 주문당 1회(Lua SET NX), 5분 미승인 자동 취소, 15분 미픽업 만료, Reconciliation 정정·DB 투영 갱신</li>
-            <li>Testcontainers(MySQL 8.4 + Redis 7.4)로 세 전략이 같은 동시성 시나리오를 상속 — 통합 테스트 49건, 전체 164건. Flyway + Hibernate validate로 스키마 불일치를 테스트에서 차단</li>
-            <li>Prometheus · Grafana 예약 정합성 대시보드 — 0이어야 하는 값(재고 보정, 복구 실패, 만료 실패)을 한 줄에</li>
           </ul>
         </div>
       </div>
