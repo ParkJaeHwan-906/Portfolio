@@ -1926,6 +1926,7 @@
       <a href="#yeon">연금술사</a>
       <a href="#onair">onAiR</a>
       <a href="#address-benchmark">주소 검색 벤치마크</a>
+      <a href="#ieum">이음</a>
     </div>
     <a class="btn btn--primary" style="padding:8px 18px;font-size:14px" href="mailto:doormoo2@naver.com">Contact</a>
   </div>
@@ -2071,8 +2072,8 @@
 <section class="tile tile--dark3 center" id="projects">
   <div class="wrap">
     <p class="eyebrow">Projects</p>
-    <h2 class="hero-display">다섯 개의 프로젝트,<br>하나의 원칙 — 안정성.</h2>
-    <p class="lead" style="max-width:840px;margin:22px auto 0;font-size:clamp(16px,1.9vw,21px)">클라우드 인프라와 AI 파이프라인, 실시간 게임 동기화, RAG 챗봇, AR 트래킹, 검색 성능 개선.<br>각기 다른 도메인에서 신뢰할 수 있는 서버를 설계했습니다.</p>
+    <h2 class="hero-display">여섯 개의 프로젝트,<br>하나의 원칙 — 안정성.</h2>
+    <p class="lead" style="max-width:840px;margin:22px auto 0;font-size:clamp(16px,1.9vw,21px)">클라우드 인프라와 AI 파이프라인, 실시간 게임 동기화, RAG 챗봇, AR 트래킹, 검색 성능 개선, 한정 재고 동시성 제어.<br>각기 다른 도메인에서 신뢰할 수 있는 서버를 설계했습니다.</p>
 
     <div class="orgtabs" role="tablist" aria-label="소속 기관">
       <button role="tab" id="ot-swm" aria-controls="org-swm" aria-selected="true">
@@ -2085,7 +2086,7 @@
       </button>
       <button role="tab" id="ot-personal" aria-controls="org-personal" aria-selected="false" tabindex="-1">
         <span class="ot__name">개인 프로젝트</span>
-        <span class="ot__meta">성능 실험 — 프로젝트 1</span>
+        <span class="ot__meta">성능 실험 — 프로젝트 2</span>
       </button>
     </div>
   </div>
@@ -6292,7 +6293,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <!-- ============ PROJECT : ADDRESS MATCHING BENCHMARK ============ -->
 <section class="tile tile--dark" id="address-benchmark">
   <div class="wrap">
-    <div class="projindex"><span class="n">01</span><span class="lab">/ 01 — Search Performance Engineering</span></div>
+    <div class="projindex"><span class="n">01</span><span class="lab">/ 02 — Search Performance Engineering</span></div>
     <div class="pcover">
       <p class="eyebrow">OCR 후처리 · 비표준 한국 주소 검색</p>
       <h2 class="hero-display">주소 검색 성능 개선</h2>
@@ -6668,6 +6669,295 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <p>각 조건을 한 번씩만 측정했고, Elasticsearch p50은 실행마다 2~5ms 사이에서 움직였습니다(JVM·HTTP 워밍업). 단일 노드 2GB heap이라 샤드 수·캐시 상태에 따라 절대값은 달라질 수 있습니다.</p>
         <p class="lab">개선 방향</p>
         <p>같은 조건에서 최소 3회 반복해 분산과 신뢰구간을 붙이고, warm-up을 늘린 뒤 1만 건 근처의 교차점을 1천·3천·3만 건으로 더 촘촘히 확인.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ PROJECT : IEUM ============ -->
+<section class="tile tile--dark" id="ieum">
+  <div class="wrap">
+    <div class="projindex"><span class="n">02</span><span class="lab">/ 02 — Concurrency &amp; Consistency</span></div>
+    <div class="pcover">
+      <p class="eyebrow">마감 할인 상품 선착순 예약 · 한정 재고 동시성</p>
+      <h2 class="hero-display">이음 (IEUM)</h2>
+      <div class="rolelead">
+        <p class="rl-label">Problem &amp; Approach</p>
+        <p>재고 100개에 1만 명이 동시에 예약하면, 잠금 없는 차감은 <strong>재고의 20배</strong>를 팔았습니다. "어떤 방식이 맞다"를 결론만 적는 대신, 같은 부하로 <strong>여섯 가지 동시성 제어</strong>를 모두 구현해 숫자로 비교했습니다.</p>
+        <p>최종 경로는 Redis Lua 한 번으로 멱등키·중복 예약·재고를 판정하고, 통과한 요청만 DB 트랜잭션을 엽니다. 거절되는 요청은 DB 커넥션을 쓰지 않습니다.</p>
+        <p>그 대가로 생긴 Redis ↔ DB 정합성 문제는 주문당 1회 복구, 두 번 연속 같은 어긋남만 고치는 Reconciliation, Testcontainers 통합 테스트로 닫았습니다.</p>
+      </div>
+      <div class="meta">
+        <div class="m"><span class="lbl">프로젝트 유형</span><span class="val">개인 프로젝트 · 2026.09 – 진행 중</span></div>
+        <div class="m"><span class="lbl">기술</span><span class="val">Java 21 · Spring Boot 4 · MySQL 8.4 · Redis 7.4 · Flyway · Testcontainers · k6 · Prometheus · Grafana</span></div>
+        <div class="m"><span class="lbl">측정 규모</span><span class="val">재고 100 / 요청 1만 · 1,000명 × 100회 중복 요청 10만</span></div>
+        <div class="m"><span class="lbl">저장소</span><span class="val"><a href="https://github.com/ParkJaeHwan-906/IEUM" target="_blank" rel="noopener">IEUM</a></span></div>
+      </div>
+      <div class="btns">
+        <a class="btn btn--primary" href="#ieum-deep">실측 결과 보기</a>
+        <a class="btn btn--ghost" href="https://github.com/ParkJaeHwan-906/IEUM" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tile tile--light">
+  <div class="wrap">
+    <p class="sectlabel">Intro</p>
+    <h3 class="display-md">같은 부하, 여섯 가지 차감 방식</h3>
+    <div class="feat3">
+      <div class="feat">
+        <div class="device">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="재고 100개에 요청 1만 건이 몰리자 잠금 없는 차감은 2,000건을 성공시켜 1,900건을 초과 예약했다">
+            <text class="k" x="22" y="34">잠금 없는 차감 (naive)</text>
+            <text x="22" y="54" style="font-size:11.5px">재고 100 · 소비자 10,000명 × 1회</text>
+            <rect class="bar on" x="22" y="72" width="14" height="12" rx="6"/><text class="mono" x="46" y="82">재고 100</text>
+            <rect class="bar" x="22" y="96" width="276" height="12" rx="6"/><text class="mono k" x="22" y="128">201 Created 2,000건</text>
+            <text class="mono hi" x="22" y="150">초과 예약 1,900건</text>
+            <text x="22" y="182" style="font-size:12px">같은 값을 읽은 트랜잭션들이 서로의 차감을 덮어씀</text>
+          </svg>
+        </div>
+        <h4>문제 재현</h4>
+        <p>잠금 없이 "조회 → 계산 → 덮어쓰기"를 하면 동시에 같은 값을 읽은 요청들이 서로의 차감을 지웁니다. 재현을 먼저 해 두고 모든 방식을 같은 k6 시나리오로 쟀습니다.</p>
+      </div>
+      <div class="feat">
+        <div class="device">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="여섯 가지 방식의 처리량 비교. 조건부 UPDATE와 Redis Lua가 초과 예약 없이 가장 빨랐다">
+            <text class="k" x="22" y="34">처리량 · 초과 예약 0인 방식만</text>
+            <text x="22" y="54" style="font-size:11.5px">req/s · VU 100 · 커넥션 풀 20</text>
+            <rect class="bar" x="22" y="68" width="57" height="12" rx="6"/><text class="mono" x="88" y="78">synchronized 204</text>
+            <rect class="bar" x="22" y="90" width="201" height="12" rx="6"/><text class="mono" x="232" y="100">@Version 719</text>
+            <rect class="bar on" x="22" y="112" width="212" height="12" rx="6"/><text class="mono hi" x="242" y="122">조건부 758</text>
+            <rect class="bar on" x="22" y="134" width="177" height="12" rx="6"/><text class="mono hi" x="208" y="144">Redis Lua 633</text>
+            <text x="22" y="172" style="font-size:12px">naive 493 · 트랜잭션 안 synchronized 457 은</text>
+            <text x="22" y="188" style="font-size:12px">초과 예약이 나서 제외</text>
+          </svg>
+        </div>
+        <h4>여섯 방식 비교</h4>
+        <p>잠금 없음, <code>synchronized</code> 두 범위, <code>@Version</code> 낙관적 락, 조건부 UPDATE, 비관적 락, Redis Lua를 전략 인터페이스로 갈아 끼우며 같은 조건에서 측정했습니다.</p>
+      </div>
+      <div class="feat">
+        <div class="device">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="Redis가 판정하고 DB가 기록하므로 둘 사이 어긋남을 Reconciliation이 DB 주문 상태 기준으로 정정한다">
+            <text class="k" x="22" y="34">Redis ↔ DB 정합성</text>
+            <text x="22" y="54" style="font-size:11.5px">재고의 진실은 DB 의 주문 상태</text>
+            <rect class="box" x="22" y="70" width="120" height="40" rx="8"/>
+            <text class="mono k" x="34" y="94">stock:{id}</text>
+            <rect class="box" x="178" y="70" width="120" height="40" rx="8"/>
+            <text class="mono k" x="190" y="94">users_orders</text>
+            <path d="M142 90 L178 90" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <text class="mono hi" x="22" y="134">기대 = initial − 활성 − 픽업</text>
+            <text x="22" y="158" style="font-size:12px">60초마다 대조, 두 번 연속 같으면 정정</text>
+            <text x="22" y="180" style="font-size:12px">복구는 주문당 1회 (SET NX 가드)</text>
+          </svg>
+        </div>
+        <h4>정합성 유지</h4>
+        <p>Redis 차감과 DB INSERT는 한 트랜잭션이 아닙니다. 그 사이에 서버가 죽어도 재고가 새지 않도록 보상, 1회 복구, Reconciliation을 두고 각각을 통합 테스트로 검증했습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tile tile--dark2">
+  <div class="wrap">
+    <p class="sectlabel">Contribution</p>
+    <div class="contrib contrib--rev">
+      <div class="contrib__img shot">
+        <svg class="abfig abfig--wide" viewBox="0 0 560 384" role="img" aria-label="예약 요청은 판매 조건 캐시와 Redis Lua 판정을 거치고, 거절이면 DB 커넥션 없이 409로 끝나며, 통과한 요청만 DB 트랜잭션에서 INSERT한다">
+          <text class="k" x="28" y="40" style="font-size:15px">예약 생성 경로 — 거절은 DB 에 닿지 않는다</text>
+          <rect class="box" x="28" y="64" width="150" height="58" rx="10"/>
+          <text class="mono k" x="44" y="88">① 판매 조건</text>
+          <text x="44" y="108" style="font-size:11.5px">5초 캐시 · 커넥션 없음</text>
+          <path d="M178 93 L204 93" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/><path d="M200 89 L206 93 L200 97" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+          <rect class="box" x="206" y="64" width="150" height="58" rx="10"/>
+          <text class="mono k" x="222" y="88">② Lua 판정</text>
+          <text x="222" y="108" style="font-size:11.5px">멱등키 · 중복 · 재고</text>
+          <path d="M356 93 L382 93" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/><path d="M378 89 L384 93 L378 97" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+          <rect class="box" x="384" y="64" width="148" height="58" rx="10"/>
+          <text class="mono k" x="400" y="88">③ DB INSERT</text>
+          <text x="400" y="108" style="font-size:11.5px">통과한 요청만</text>
+          <path d="M281 122 L281 150" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+          <rect class="box" x="206" y="150" width="150" height="34" rx="8"/>
+          <text class="mono hi" x="222" y="172">거절 → 409 즉시</text>
+          <text class="k" x="28" y="222" style="font-size:12px;letter-spacing:.06em">1,000명 × 100회 중복 요청 (10만 건)</text>
+          <g style="font-size:12px">
+            <rect class="box" x="28" y="232" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="251">비관적 락</text><text class="mono" x="170" y="251">커넥션 100,002</text><text class="mono" x="330" y="251">319 req/s</text>
+            <rect class="box" x="28" y="266" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="285">낙관적 락</text><text class="mono" x="170" y="285">커넥션 111,836</text><text class="mono" x="330" y="285">1,082 req/s</text>
+            <rect class="box" x="28" y="300" width="504" height="28" rx="8"/>
+            <text class="k" x="44" y="319">Redis Lua</text><text class="mono hi" x="170" y="319">커넥션 1,011</text><text class="mono hi" x="330" y="319">3,672 req/s</text>
+          </g>
+          <text class="mono" x="28" y="362">세 방식 모두 초과 예약 0 · 사용자당 1건 — 차이는 거절 비용</text>
+        </svg>
+      </div>
+      <div class="contrib__text">
+        <div class="cblock">
+          <h4>동시성 제어 설계·측정</h4>
+          <ul class="bul">
+            <li>여섯 차감 전략을 <code>StockDeductionStrategy</code> 구현체로 두고 환경변수 하나로 교체 — 같은 k6 시나리오(재고 100 / 요청 1만, 1,000명 × 100회 중복)로 측정해 ADR 두 편에 결과와 판단을 기록</li>
+            <li>Redis Lua 한 번으로 멱등키·사용자당 활성 예약·재고를 원자적으로 판정 — 10만 요청 중 DB 커넥션 획득 1,011회, 행 락 대기 0</li>
+            <li>비관적 락은 <code>SELECT … FOR UPDATE</code>를 트랜잭션 첫 문장으로 — REPEATABLE READ 스냅샷이 잠금 이후에 생기게 해 중복 예약 검사의 틈을 닫음</li>
+          </ul>
+        </div>
+        <div class="cblock">
+          <h4>정합성 장치와 검증</h4>
+          <ul class="bul">
+            <li>모든 전략에 Idempotency-Key — DB unique(account, key)로 재요청은 같은 주문을 돌려줌</li>
+            <li>재고 복구 주문당 1회(Lua SET NX), 5분 미승인 자동 취소, 15분 미픽업 만료, Reconciliation 정정·DB 투영 갱신</li>
+            <li>Testcontainers(MySQL 8.4 + Redis 7.4)로 세 전략이 같은 동시성 시나리오를 상속 — 통합 테스트 49건, 전체 164건. Flyway + Hibernate validate로 스키마 불일치를 테스트에서 차단</li>
+            <li>Prometheus · Grafana 예약 정합성 대시보드 — 0이어야 하는 값(재고 보정, 복구 실패, 만료 실패)을 한 줄에</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ IEUM : Deep Dive ============ -->
+<section class="tile tile--light tile--tight" id="ieum-deep">
+  <div class="wrap">
+    <p class="sectlabel">Deep Dive</p>
+    <h3 class="display-md">정합성은 모두 맞았다.<br>차이는 거절을 얼마나 싸게 하느냐.</h3>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">초과 예약을 막는 방법은 여러 가지였습니다. 측정해 보니 갈린 지점은 재고가 바닥난 뒤의 수천 건, 이미 예약한 사용자의 중복 요청처럼 <strong>거절해야 하는 요청</strong>이 DB 자원을 얼마나 쓰느냐였습니다.</p>
+    <div class="ts" style="margin-top:32px">
+      <div class="tscard">
+        <span class="tag tag--c">제약</span>
+        <ul>
+          <li>한 상품 행에 모든 요청이 몰림 — DB 잠금 방식은 재고 한 행의 X 락 앞에 줄을 섬</li>
+          <li>p99 의 정체는 전략이 아니라 VU 100 / 커넥션 풀 20 의 대기 — 잠금 없는 naive 도 같은 대기를 보임</li>
+          <li>Redis 를 원장으로 쓰면 Redis 차감과 DB 기록이 한 트랜잭션이 아님</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--t">판단</span>
+        <ul>
+          <li>@Version 은 재시도 상한에서 재고가 있는데도 답을 못 준 요청 5.7% — 조건부 UPDATE 한 문장은 같은 정합성에 503 0</li>
+          <li>비관적 락은 거절할 요청도 잠금을 받아야 거절 가능 — 10만 요청 중 행 락 대기 99,999</li>
+          <li>Redis Lua 는 거절을 Redis 에서 끝냄 — 같은 부하에서 처리량 11.5배, p99 2.2초</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--s">선택</span>
+        <ul>
+          <li>예약 경로는 Redis Lua — 판정과 차감을 하나의 원자 연산으로, 통과한 요청만 DB 트랜잭션</li>
+          <li>Redis 를 운영할 수 없다면 조건부 UPDATE 를 두 번째 답으로 — 한 상품 처리 상한 ≈ 130건/s 로 충분한 트래픽이면 가장 단순</li>
+          <li>Redis ↔ DB 어긋남은 DB 주문 상태를 진실로 두고 Reconciliation 이 정정</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="vf" id="ieum-results" style="padding:0 0 96px">
+<div class="vfwrap">
+
+  <h4 class="sec" style="margin-top:0">대표 지표</h4>
+  <div class="stats">
+    <div class="stat">
+      <span class="lbl">잠금 없는 차감 · 재고 100 <span class="pv m">실측</span></span>
+      <span class="val">2,000<span class="u">건</span></span>
+      <span class="note">요청 1만 건 중 201 Created<br>초과 예약 1,900건 — 문제 재현</span>
+    </div>
+    <div class="stat vfhero">
+      <span class="lbl">Redis Lua · 10만 중복 요청 <span class="pv m">실측</span></span>
+      <span class="val">1,011<span class="u">회</span></span>
+      <span class="note">DB 커넥션 획득 (비관적 락 100,002회)<br>거절 99,000건이 DB 에 닿지 않음</span>
+    </div>
+    <div class="stat vfhero">
+      <span class="lbl">처리량 · 같은 10만 요청 <span class="pv m">실측</span></span>
+      <span class="val">11.5<span class="u">배</span></span>
+      <span class="note">Redis 3,672 req/s vs 비관적 락 319 req/s<br>p99 2.2초 vs 19.1초</span>
+    </div>
+    <div class="stat">
+      <span class="lbl">세 방식 · 사용자당 2건 이상 <span class="pv m">실측</span></span>
+      <span class="val">0<span class="u">건</span></span>
+      <span class="note">재고 1,000 · 사용자 1,000명<br>201 정확히 1,000 · 초과 예약 0</span>
+    </div>
+  </div>
+  <p class="legend"><span class="pv m">실측</span>직접 측정한 값 &nbsp;·&nbsp; 2026-09-12 ~ 10-09 · Windows 11 단일 PC · MySQL 8.4 · Redis 7.4 (Docker) · HikariCP 20 · k6</p>
+
+  <h4 class="sec">재고 100 / 요청 1만 — 여섯 방식</h4>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>방식</th><th>201</th><th>초과 예약</th><th>p99</th><th>처리량</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>잠금 없음 (naive)</td><td class="mono">2,000</td><td class="mono">1,900</td><td class="mono">663ms</td><td class="mono">493 req/s</td><td>기준선</td></tr>
+        <tr><td>synchronized · 트랜잭션 안</td><td class="mono">2,854</td><td class="mono">2,754</td><td class="mono">696ms</td><td class="mono">457 req/s</td><td>모니터 해제 후 커밋</td></tr>
+        <tr><td>synchronized · 트랜잭션 밖</td><td class="mono">100</td><td class="mono">0</td><td class="mono">1.41s</td><td class="mono">204 req/s</td><td>단일 인스턴스 한정</td></tr>
+        <tr><td>@Version 낙관적 락</td><td class="mono">100</td><td class="mono">0</td><td class="mono">790ms</td><td class="mono">719 req/s</td><td>503 574건 (5.7%)</td></tr>
+        <tr><td>조건부 UPDATE</td><td class="mono">100</td><td class="mono">0</td><td class="mono">669ms</td><td class="mono">758 req/s</td><td>503 0 · 행 락 대기 118</td></tr>
+        <tr><td>Redis Lua</td><td class="mono">100</td><td class="mono">0</td><td class="mono">589–808ms</td><td class="mono">455–633 req/s</td><td>행 락 대기 0 · 두 라운드</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="legend">소비자 1만 명이 1회씩 요청, VU 100 · 커넥션 풀 20. 이 부하의 p99 는 전략보다 커넥션 대기가 정합니다(잠금 없는 naive 도 같은 수준). 그래서 다음 측정은 같은 사용자의 요청이 겹치는 부하로 바꿨습니다.</p>
+
+  <h4 class="sec">1,000명 × 100회 중복 요청 (10만) — 최종 후보 세 방식</h4>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>방식</th><th>201 / 사용자당 2건+</th><th>503</th><th>처리량</th><th>p99</th><th>커넥션 획득</th><th>행 락 대기</th></tr></thead>
+      <tbody>
+        <tr><td>비관적 락</td><td class="mono">1,000 / 0</td><td class="mono">0</td><td class="mono">319 req/s</td><td class="mono">19.1s</td><td class="mono">100,002</td><td class="mono">99,999</td></tr>
+        <tr><td>@Version 낙관적 락</td><td class="mono">1,000 / 0</td><td class="mono">3,904</td><td class="mono">1,082 req/s</td><td class="mono">15.3s</td><td class="mono">111,836</td><td class="mono">16,635</td></tr>
+        <tr><td>Redis Lua</td><td class="mono">1,000 / 0</td><td class="mono">0</td><td class="mono">3,672 req/s</td><td class="mono">2.2s</td><td class="mono">1,011</td><td class="mono">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="legend">재고 1,000 · 사용자 1,000명이 같은 상품에 4건씩 동시 요청을 반복, 매 요청 새 Idempotency-Key. k6 지연에는 Tomcat 큐(동시 4,000 / 스레드 200) 대기가 포함됩니다.</p>
+
+</div>
+</div>
+
+<section class="tile tile--light">
+  <div class="wrap">
+    <p class="sectlabel">Trouble Shooting</p>
+    <h3 class="display-md">낙관적 락의 19%가 500 — 범인은 SQL 순서</h3>
+    <div class="ts">
+      <div class="tscard">
+        <span class="tag tag--t">Trouble</span>
+        <ul>
+          <li><code>@Version</code> 을 붙이자 초과 예약은 0 이 됐지만, 요청 1만 건 중 <strong>1,926건(19%)이 500</strong></li>
+          <li>로그는 모두 MySQL <code>Deadlock found when trying to get lock</code> — 재고 한 행만 갱신하는데 데드락이 날 이유가 보이지 않음</li>
+          <li>잠금 없는 naive 에서는 같은 부하에 데드락이 0</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--c">Cause</span>
+        <ul>
+          <li>IDENTITY 로 즉시 나가는 <code>INSERT users_orders</code> 가 FK 검사로 <code>stores_items</code> 행에 <strong>S 락</strong>을 잡음</li>
+          <li>커밋 직전 flush 로 나가는 <code>UPDATE stores_items</code> 가 같은 행에 <strong>X 락</strong>을 요구 — 두 트랜잭션이 서로의 S 락에 막힘</li>
+          <li>naive 는 벌크 UPDATE 가 INSERT 보다 먼저 실행돼 이 순서가 생기지 않았음. 문제는 <code>@Version</code> 이 아니라 누가 어떤 순서로 잠그느냐</li>
+        </ul>
+      </div>
+      <div class="tscard">
+        <span class="tag tag--s">Solution</span>
+        <ul>
+          <li>재고 감소 직후 <code>flush()</code> 해 UPDATE 를 INSERT 앞으로 — X 락을 먼저 선점</li>
+          <li>데드락 희생자(<code>CannotAcquireLockException</code>) 도 재시도 대상에 추가하고 카운터로 분리 집계</li>
+          <li>재측정: <strong>500 0 · 데드락 0 · 롤백된 INSERT 0</strong>. 이후 비관적 락도 같은 원리로 잠금을 트랜잭션 첫 문장에 둠</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tile tile--parchment">
+  <div class="wrap">
+    <p class="sectlabel">Retrospect</p>
+    <div class="retro">
+      <div class="rcard">
+        <h4>틀린 예상을 측정이 바로잡음</h4>
+        <p>낙관적 락은 중복 예약 검사를 잠금 없이 읽으므로 같은 사용자가 두 건을 가질 것이라 예상했지만, 실측은 0건이었습니다. 같은 사용자의 앞선 예약이 같은 상품 행의 version 을 올려, 뒤 요청은 반드시 충돌하고 재시도에서 중복으로 걸렸습니다.</p>
+        <p class="lab">배운 점</p>
+        <p>보장은 코드가 아니라 데이터 배치에서 나올 수 있습니다. 재고를 상품 행 밖으로 옮기는 순간 이 우연한 보장은 사라지므로, ADR 에 "왜 막혔는지"를 함께 남겼습니다.</p>
+      </div>
+      <div class="rcard">
+        <h4>단일 PC 측정의 한계</h4>
+        <p>서버·DB·Redis·k6 가 한 PC 에 있어 라운드 간 p99 편차가 ±100ms 였고, 100만 요청 측정은 메모리 부족으로 중단되어 10만 건을 기준으로 정했습니다. Windows 의 listen backlog 상한(200) 때문에 첫 연결을 분산해야 했습니다.</p>
+        <p class="lab">개선 방향</p>
+        <p>부하 발생기와 서버를 분리한 환경에서 반복 측정해 분산을 붙이고, Kafka 로 DB 기록을 버퍼링하는 V2 를 같은 시나리오로 비교할 계획입니다.</p>
       </div>
     </div>
   </div>
