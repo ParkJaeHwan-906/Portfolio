@@ -6654,6 +6654,26 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 </section>
 
 
+<section class="tile tile--parchment">
+  <div class="wrap">
+    <p class="sectlabel">Retrospect</p>
+    <div class="retro">
+      <div class="rcard">
+        <h4>후보 찾기와 순위 정하기는 다른 문제</h4>
+        <p>1만 건에서 98.9%였던 Elasticsearch Top-1이 1천만 건에서는 90.7%로 내려갔지만, Top-5는 97.7%를 지켰습니다. 정답을 후보에 올리는 일은 역색인이 해냈고, 그 안에서 1위를 고르는 일이 규모와 함께 어려워졌습니다.</p>
+        <p class="lab">배운 점</p>
+        <p>검색을 한 방법으로 끝내려 하지 않고, 놓치지 않는 회수 단계와 정밀한 재순위 단계로 나눠서 봐야 한다는 것을 숫자로 확인했습니다.</p>
+      </div>
+      <div class="rcard">
+        <h4>100건에서는 LCS가 33배 빨랐다</h4>
+        <p>검색 엔진은 HTTP 왕복과 고정 비용만으로 2~3ms를 쓰기 때문에, 후보가 적을 때는 전수 탐색이 오히려 빨랐습니다. 역색인이 앞서기 시작한 것은 1만 건 근처부터였습니다.</p>
+        <p class="lab">배운 점</p>
+        <p>더 빠른 방법은 데이터 규모를 정해야 답할 수 있는 질문이었습니다. 교차점을 직접 재 두니, 작은 매핑 테이블은 단순하게 두고 큰 테이블에만 역색인을 쓰는 기준을 숫자로 설명할 수 있었습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ PROJECT : IEUM ============ -->
 <section class="tile tile--dark" id="ieum">
   <div class="wrap">
@@ -6863,6 +6883,267 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     </div>
   </div>
   <p class="legend"><span class="pv m">실측</span>직접 측정한 값 &nbsp;·&nbsp; 2026-09-12 ~ 10-09 · Windows 11 단일 PC · MySQL 8.4 · Redis 7.4 (Docker) · HikariCP 20 · k6</p>
+
+  <h4 class="sec">시연 — 같은 요청 8건, 세 가지 처리 방식</h4>
+  <p style="max-width:70ch">재고 3개에 요청 8건이 동시에 들어옵니다. A와 C는 버튼을 두 번 눌렀습니다. 방식을 고르고 실행하면 각 요청이 어떻게 처리되는지와 DB 자원을 얼마나 쓰는지가 차례로 표시되고, 마지막에 같은 방식의 10만 요청 실측값이 찍힙니다.</p>
+
+  <style>
+    .vf #ie-root .iereq { transition: transform .45s ease; }
+    .vf #ie-root .iereq circle { fill: var(--canvas); stroke: var(--hairline); stroke-width: 1.5; transition: fill .3s; }
+    .vf #ie-root .iereq text { font-family: var(--ui); font-size: 13px; font-weight: 600; fill: var(--ink); }
+    .vf #ie-root .iereq .ist { font-weight: 500; font-size: 12px; fill: var(--body-mute); }
+    .vf #ie-root .iereq.on circle { fill: var(--primary); stroke: none; }
+    .vf #ie-root .iereq.on .lab { fill: var(--on-primary); }
+    .vf #ie-root .iereq.ok circle { fill: var(--green); stroke: none; }
+    .vf #ie-root .iereq.no circle { fill: var(--bad); stroke: none; }
+    .vf #ie-root .iereq.ex circle { fill: #ff9500; stroke: none; }
+    .vf #ie-root .iereq.ok .lab, .vf #ie-root .iereq.no .lab, .vf #ie-root .iereq.ex .lab { fill: #ffffff; }
+    .vf #ie-root .iereq.ok .ist { fill: var(--green); }
+    .vf #ie-root .iereq.no .ist { fill: var(--bad); }
+    .vf #ie-root .iereq.ex .ist { fill: #c26a00; }
+    .vf #ie-root .iegate rect { fill: var(--canvas); stroke: var(--hairline); stroke-width: 1.5; transition: fill .3s; }
+    .vf #ie-root .iegate.on rect { fill: var(--primary); stroke: none; }
+    .vf #ie-root .iegate text { font-family: var(--ui); font-size: 13px; fill: var(--body-mute); }
+    .vf #ie-root .iegate .ntitle { font-size: 14px; font-weight: 600; fill: var(--ink); }
+    .vf #ie-root .iegate.on text { fill: var(--on-primary); }
+    .vf #ie-root .iecnt { font-family: var(--ui); font-size: 13px; fill: var(--body-mute); }
+    .vf #ie-root .iecnt tspan.v { font-family: var(--code); font-weight: 600; fill: var(--ink); }
+    .vf #ie-root .iecnt.hot tspan.v { fill: var(--primary); }
+  </style>
+
+  <div class="demo flowdemo" id="ie-root">
+    <div class="demo-bar demo-bar--steps">
+      <div class="dstep">
+        <span class="dnum">1</span><span class="dlabel">방식 고르기</span>
+        <button type="button" class="opt" id="ie-pess" aria-pressed="true">비관적 락</button>
+        <button type="button" class="opt" id="ie-opt" aria-pressed="false">낙관적 락</button>
+        <button type="button" class="opt" id="ie-redis" aria-pressed="false">Redis Lua</button>
+      </div>
+      <div class="dstep">
+        <span class="dnum">2</span><span class="dlabel">재생</span>
+        <button type="button" class="run" id="ie-run">▶ 실행</button>
+        <button type="button" class="ghost" id="ie-reset">처음으로</button>
+      </div>
+      <p class="dhint">초록은 예약 성공(201), 빨강은 거절(409), 주황은 재시도를 다 쓰고 답을 못 준 요청(503)입니다. 오른쪽 숫자는 요청 8건을 처리하는 동안 쓴 DB 자원입니다.</p>
+    </div>
+
+    <div class="demo-pane">
+      <h5>요청 처리 <span id="ie-progress">0 / 8</span></h5>
+      <div class="fig-scroll">
+        <svg id="ie-svg" viewBox="0 0 760 380" role="img"
+             aria-label="왼쪽에 요청 8건이 줄지어 있고, 가운데 처리 단계를 지나며 성공은 초록, 거절은 빨강, 재시도 소진은 주황으로 바뀐다. 오른쪽에 성공·거절·503 건수와 DB 커넥션 사용, 행 잠금 대기 또는 버전 충돌 횟수가 표시된다.">
+          <rect class="zonebox" x="8" y="16" width="230" height="352" rx="8"/>
+          <text class="wlabel" x="22" y="38">요청 8건 · 재고 3</text>
+          <rect class="zonebox" x="252" y="16" width="250" height="352" rx="8"/>
+          <text class="wlabel" id="ie-zone" x="266" y="38">상품 행 잠금</text>
+          <g class="iegate" id="ie-gate">
+            <rect x="282" y="150" width="190" height="72" rx="8"/>
+            <text class="ntitle" id="ie-gt" x="298" y="178">SELECT … FOR UPDATE</text>
+            <text id="ie-gs" x="298" y="202">재고 3</text>
+          </g>
+          <text class="wlabel" id="ie-gnote" x="266" y="352"></text>
+          <rect class="zonebox" x="516" y="16" width="236" height="352" rx="8"/>
+          <text class="wlabel" x="530" y="38">결과와 DB 자원</text>
+          <text class="iecnt" id="ie-c-ok" x="530" y="76">예약 성공 <tspan class="v" dx="6">0</tspan></text>
+          <text class="iecnt" id="ie-c-no" x="530" y="106">거절 409 <tspan class="v" dx="6">0</tspan></text>
+          <text class="iecnt" id="ie-c-ex" x="530" y="136">답을 못 줌 503 <tspan class="v" dx="6">0</tspan></text>
+          <text class="iecnt hot" id="ie-c-conn" x="530" y="196">DB 커넥션 사용 <tspan class="v" dx="6">0</tspan></text>
+          <text class="iecnt hot" id="ie-c-wait" x="530" y="226"><tspan id="ie-wlab">행 잠금 대기</tspan> <tspan class="v" dx="6">0</tspan></text>
+          <text class="wlabel" x="530" y="286">남은 재고</text>
+          <text class="iecnt" id="ie-c-stock" x="530" y="312"><tspan class="v" dx="0" style="font-size:22px">3</tspan></text>
+          <g id="ie-reqs"></g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="demo-pane stagewrap">
+      <h5>처리 로그</h5>
+      <ol class="stagelog" id="ie-log"></ol>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const ROOT = document.getElementById('ie-root');
+    if (!ROOT) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const $ = id => ROOT.querySelector('#' + id);
+    const USERS = ['A', 'B', 'C', 'A', 'D', 'C', 'E', 'F'];
+    const STOCK = 3;
+    const MAX_ATTEMPTS = 3;
+
+    const MODES = {
+      pess: { zone: '상품 행 잠금', gt: 'SELECT … FOR UPDATE', wlab: '행 잠금 대기',
+        measured: '실측 · 1,000명 × 100회(10만 요청): 319 req/s · p99 19.1초 · DB 커넥션 100,002회 · 행 잠금 대기 99,999회',
+        lesson: '거절할 요청도 잠금을 받아야 거절할 수 있어, 요청 수만큼 DB 커넥션과 행 잠금을 썼습니다' },
+      opt: { zone: '버전 비교 후 쓰기', gt: 'UPDATE … WHERE version', wlab: '버전 충돌',
+        measured: '실측 · 1,000명 × 100회(10만 요청): 1,082 req/s · p99 15.3초 · DB 커넥션 111,836회 · 503 3,904건',
+        lesson: '잠금 대기는 없지만, 같은 행에 몰린 요청이 충돌과 재시도를 반복하다 일부는 답을 못 받았습니다' },
+      redis: { zone: 'Redis Lua 판정', gt: 'stock-reserve.lua', wlab: '행 잠금 대기',
+        measured: '실측 · 1,000명 × 100회(10만 요청): 3,672 req/s · p99 2.2초 · DB 커넥션 1,011회 · 행 잠금 대기 0회',
+        lesson: '거절은 Redis 에서 끝나 DB 에 닿지 않았고, 예약에 성공한 3건만 DB 커넥션을 썼습니다' }
+    };
+    let mode = 'pess';
+    let timers = [];
+
+    const reqG = $('ie-reqs');
+    const REQS = USERS.map((u, i) => {
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'iereq');
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', '14');
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('class', 'lab'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('y', '5');
+      t.textContent = u;
+      const s = document.createElementNS(NS, 'text');
+      s.setAttribute('class', 'ist'); s.setAttribute('x', '24'); s.setAttribute('y', '5');
+      g.appendChild(c); g.appendChild(t); g.appendChild(s);
+      reqG.appendChild(g);
+      return { g, s, user: u, i, home: [40, 72 + i * 37] };
+    });
+
+    function place(r, x, y) { r.g.setAttribute('transform', 'translate(' + x + ',' + y + ')'); r.g.style.transform = 'translate(' + x + 'px,' + y + 'px)'; }
+    function home(r) { place(r, r.home[0], r.home[1]); }
+    function setReq(r, cls, label) { r.g.setAttribute('class', 'iereq' + (cls ? ' ' + cls : '')); r.s.textContent = label || ''; }
+    function setCnt(id, v) { $(id).querySelector('tspan.v').textContent = v; }
+    function gate(on, sub) { $('ie-gate').setAttribute('class', 'iegate' + (on ? ' on' : '')); if (sub !== undefined) $('ie-gs').textContent = sub; }
+    function log(title, detail) {
+      const li = document.createElement('li'); li.className = 'on';
+      li.innerHTML = '<span class="st"></span><span class="sd"></span>';
+      li.querySelector('.st').textContent = title; li.querySelector('.sd').textContent = detail || '';
+      $('ie-log').appendChild(li);
+    }
+    function name(r) { const dup = USERS.slice(0, r.i).indexOf(r.user) >= 0; return r.user + (dup ? ' (두 번째)' : ''); }
+
+    function idle() {
+      timers.forEach(clearTimeout); timers = [];
+      const m = MODES[mode];
+      $('ie-zone').textContent = m.zone; $('ie-gt').textContent = m.gt; $('ie-wlab').textContent = m.wlab;
+      $('ie-gnote').textContent = '';
+      gate(false, mode === 'opt' ? '재고 3 · v7' : '재고 3');
+      ['ie-c-ok', 'ie-c-no', 'ie-c-ex', 'ie-c-conn', 'ie-c-wait'].forEach(id => setCnt(id, 0));
+      setCnt('ie-c-stock', STOCK);
+      REQS.forEach(r => { setReq(r, '', ''); home(r); });
+      $('ie-log').innerHTML = ''; $('ie-progress').textContent = '0 / 8';
+      $('ie-run').disabled = false;
+    }
+
+    function plan() {
+      const steps = [];
+      const st = { stock: STOCK, version: 7, active: new Set(), ok: 0, no: 0, ex: 0, conn: 0, wait: 0, done: 0 };
+      const snap = () => Object.assign({}, st, { active: new Set(st.active) });
+      const push = (fn) => steps.push(fn);
+
+      if (mode === 'pess') {
+        push(() => log('요청 8건 도착', '첫 요청이 상품 행을 잠그고, 나머지 7건은 잠금이 풀릴 때까지 DB 커넥션을 쥔 채 기다립니다'));
+        USERS.forEach((u, i) => {
+          const r = REQS[i];
+          st.conn++; if (i > 0) st.wait++;
+          let res, label;
+          if (st.active.has(u)) { res = 'no'; label = '409 중복'; st.no++; }
+          else if (st.stock === 0) { res = 'no'; label = '409 재고 없음'; st.no++; }
+          else { res = 'ok'; label = '201'; st.stock--; st.active.add(u); st.ok++; }
+          st.done++;
+          const s = snap();
+          push(() => { place(r, 377, 186); setReq(r, 'on', ''); gate(true); setCnt('ie-c-conn', s.conn); setCnt('ie-c-wait', s.wait); });
+          push(() => {
+            gate(false, '재고 ' + s.stock); setReq(r, res, label); home(r);
+            setCnt('ie-c-ok', s.ok); setCnt('ie-c-no', s.no); setCnt('ie-c-stock', s.stock);
+            $('ie-progress').textContent = s.done + ' / 8';
+            log(name(r) + (i > 0 ? ' — 잠금 대기 후 획득' : ' — 잠금 획득'), res === 'ok' ? '재고를 줄이고 주문 저장 → 201' : (label.indexOf('중복') >= 0 ? '잠금을 받은 뒤에야 이미 예약이 있음을 확인 → 409' : '잠금을 받은 뒤에야 재고 0 을 확인 → 409'));
+          });
+        });
+      }
+
+      if (mode === 'opt') {
+        let pending = USERS.map((u, i) => ({ r: REQS[i], attempt: 1 }));
+        let round = 1;
+        while (pending.length) {
+          const view = { stock: st.stock, version: st.version, active: new Set(st.active) };
+          const readers = pending.slice();
+          const v0 = view.version;
+          push(() => {
+            readers.forEach((p, k) => { place(p.r, 300 + (k % 4) * 46, 76 + Math.floor(k / 4) * 36); setReq(p.r, 'on', ''); });
+            gate(true, '재고 ' + view.stock + ' · v' + v0);
+            log(round + '회차 — ' + readers.length + '건이 동시에 읽음', '모두 재고 ' + view.stock + ', version ' + v0 + ' 를 봅니다. 잠금이 없어 기다리지 않습니다');
+          });
+          const next = [];
+          let writer = null;
+          readers.forEach(p => {
+            st.conn++;
+            const u = p.r.user;
+            if (view.active.has(u)) { st.no++; st.done++; const s = snap(); push(() => { setReq(p.r, 'no', '409 중복'); home(p.r); setCnt('ie-c-no', s.no); setCnt('ie-c-conn', s.conn); $('ie-progress').textContent = s.done + ' / 8'; log(name(p.r) + ' — 읽은 시점에 이미 예약 있음', '쓰기 전에 거절 → 409'); }); return; }
+            if (view.stock === 0) { st.no++; st.done++; const s = snap(); push(() => { setReq(p.r, 'no', '409 재고 없음'); home(p.r); setCnt('ie-c-no', s.no); setCnt('ie-c-conn', s.conn); $('ie-progress').textContent = s.done + ' / 8'; log(name(p.r) + ' — 읽은 재고 0', '쓰기 전에 거절 → 409'); }); return; }
+            if (!writer) {
+              writer = p; st.stock--; st.version++; st.active.add(u); st.ok++; st.done++;
+              const s = snap();
+              push(() => { setReq(p.r, 'ok', '201'); home(p.r); gate(true, '재고 ' + s.stock + ' · v' + s.version); setCnt('ie-c-ok', s.ok); setCnt('ie-c-conn', s.conn); setCnt('ie-c-stock', s.stock); $('ie-progress').textContent = s.done + ' / 8'; log(name(p.r) + ' — 가장 먼저 씀', 'version ' + v0 + ' 가 그대로라 성공 → v' + s.version + ', 201'); });
+              return;
+            }
+            st.wait++;
+            if (p.attempt >= MAX_ATTEMPTS) {
+              st.ex++; st.done++; const s = snap();
+              push(() => { setReq(p.r, 'ex', '503'); home(p.r); setCnt('ie-c-ex', s.ex); setCnt('ie-c-wait', s.wait); setCnt('ie-c-conn', s.conn); $('ie-progress').textContent = s.done + ' / 8'; log(name(p.r) + ' — ' + p.attempt + '번째 충돌', '재시도 상한(3회)을 다 써서 답을 못 줌 → 503'); });
+            } else {
+              const s = snap(); const a = p.attempt;
+              push(() => { setReq(p.r, '', '충돌 ' + a + '회'); home(p.r); setCnt('ie-c-wait', s.wait); setCnt('ie-c-conn', s.conn); });
+              next.push({ r: p.r, attempt: p.attempt + 1 });
+            }
+          });
+          if (next.length) {
+            const n = next.length, vNow = st.version;
+            push(() => log(n + '건 충돌', '기대한 v' + v0 + ' 가 이미 v' + vNow + ' 로 바뀌어 0행 → 새 트랜잭션으로 재시도'));
+          }
+          pending = next; round++;
+        }
+      }
+
+      if (mode === 'redis') {
+        push(() => log('요청 8건 도착', 'Redis 는 스크립트를 하나씩 원자적으로 실행합니다. 판정과 차감 사이에 다른 요청이 끼어들지 못합니다'));
+        USERS.forEach((u, i) => {
+          const r = REQS[i];
+          let res, label;
+          if (st.active.has(u)) { res = 'no'; label = '409 중복'; st.no++; }
+          else if (st.stock === 0) { res = 'no'; label = '409 재고 없음'; st.no++; }
+          else { res = 'ok'; label = '201'; st.stock--; st.active.add(u); st.ok++; st.conn++; }
+          st.done++;
+          const s = snap();
+          push(() => { place(r, 377, 186); setReq(r, 'on', ''); gate(true); });
+          push(() => {
+            gate(false, '재고 ' + s.stock); setReq(r, res, label); home(r);
+            setCnt('ie-c-ok', s.ok); setCnt('ie-c-no', s.no); setCnt('ie-c-conn', s.conn); setCnt('ie-c-stock', s.stock);
+            $('ie-progress').textContent = s.done + ' / 8';
+            log(name(r) + ' — Lua 판정', res === 'ok' ? '재고 차감 + 활성 사용자 등록 → 이 요청만 DB 에 주문 저장 → 201' : (label.indexOf('중복') >= 0 ? '활성 사용자 SET 에 이미 있음 → DB 를 열지 않고 409' : '재고 0 → DB 를 열지 않고 409'));
+          });
+        });
+      }
+
+      push(() => { gate(false); const m = MODES[mode]; $('ie-gnote').textContent = '정합성: 예약 3건 · 사용자당 1건'; log('정리 — ' + m.lesson, m.measured); $('ie-run').disabled = false; });
+      return steps;
+    }
+
+    function run() {
+      idle();
+      $('ie-run').disabled = true;
+      const steps = plan();
+      const gap = still.matches ? 0 : 520;
+      steps.forEach((fn, k) => timers.push(setTimeout(fn, k * gap)));
+    }
+
+    function select(m) {
+      mode = m;
+      ['pess', 'opt', 'redis'].forEach(k => $('ie-' + k).setAttribute('aria-pressed', k === m ? 'true' : 'false'));
+      idle();
+    }
+    $('ie-pess').addEventListener('click', () => select('pess'));
+    $('ie-opt').addEventListener('click', () => select('opt'));
+    $('ie-redis').addEventListener('click', () => select('redis'));
+    $('ie-run').addEventListener('click', run);
+    $('ie-reset').addEventListener('click', idle);
+    idle();
+  })();
+  </script>
 
   <h4 class="sec">1차 비교 — 재고 100 / 요청 1만</h4>
   <div class="table-wrap">
