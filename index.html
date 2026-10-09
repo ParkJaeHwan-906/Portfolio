@@ -6683,55 +6683,65 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--light">
   <div class="wrap">
     <p class="sectlabel">Intro</p>
-    <h3 class="display-md">같은 부하, 여섯 가지 차감 방식</h3>
+    <h3 class="display-md">같은 예약 요청, 세 가지 처리 방식</h3>
     <div class="feat3">
       <div class="feat">
         <div class="device">
-          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="재고 100개에 요청 1만 건이 몰리자 잠금 없는 차감은 2,000건을 성공시켜 1,900건을 초과 예약했다">
-            <text class="k" x="22" y="34">잠금 없는 차감 (naive)</text>
-            <text x="22" y="54" style="font-size:11.5px">재고 100 · 소비자 10,000명 × 1회</text>
-            <rect class="bar on" x="22" y="72" width="14" height="12" rx="6"/><text class="mono" x="46" y="82">재고 100</text>
-            <rect class="bar" x="22" y="96" width="276" height="12" rx="6"/><text class="mono k" x="22" y="128">201 Created 2,000건</text>
-            <text class="mono hi" x="22" y="150">초과 예약 1,900건</text>
-            <text x="22" y="182" style="font-size:12px">같은 값을 읽은 트랜잭션들이 서로의 차감을 덮어씀</text>
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="비관적 락은 상품 재고 행을 잠근 요청 하나만 처리하고 나머지 요청은 잠금이 풀릴 때까지 줄을 선다">
+            <text class="k" x="22" y="34">비관적 락</text>
+            <text x="22" y="54" style="font-size:11.5px">SELECT … FOR UPDATE · 잠금 먼저</text>
+            <g class="chips">
+              <rect class="chip" x="22" y="78" width="40" height="24" rx="12"/><text class="mono" x="42" y="94" text-anchor="middle">요청</text>
+              <rect class="chip" x="68" y="78" width="40" height="24" rx="12"/><text class="mono" x="88" y="94" text-anchor="middle">요청</text>
+              <rect class="chip" x="114" y="78" width="40" height="24" rx="12"/><text class="mono" x="134" y="94" text-anchor="middle">요청</text>
+              <rect class="chip on" x="160" y="78" width="40" height="24" rx="12"/><text class="mono" x="180" y="94" text-anchor="middle">요청</text>
+            </g>
+            <path d="M200 90 L222 90" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <rect class="box" x="222" y="72" width="76" height="36" rx="8"/>
+            <text class="mono k" x="234" y="94">재고 행</text>
+            <text x="22" y="130" style="font-size:12px">잠금을 쥔 요청 하나만 검사·차감</text>
+            <text x="22" y="152" style="font-size:12px">나머지는 커밋될 때까지 줄을 섬</text>
+            <text class="hi" x="22" y="182" style="font-size:12px">거절할 요청도 잠금을 받아야 거절</text>
           </svg>
         </div>
-        <h4>문제 재현</h4>
-        <p>잠금 없이 "조회 → 계산 → 덮어쓰기"를 하면 동시에 같은 값을 읽은 요청들이 서로의 차감을 지웁니다. 재현을 먼저 해 두고 모든 방식을 같은 k6 시나리오로 쟀습니다.</p>
+        <h4>비관적 락</h4>
+        <p>상품 행을 <code>SELECT … FOR UPDATE</code>로 잠근 뒤 검사와 차감을 합니다. 정합성은 가장 단순하게 맞지만, 재고가 없거나 이미 예약한 요청도 잠금을 받아야 거절할 수 있습니다.</p>
       </div>
       <div class="feat">
         <div class="device">
-          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="여섯 가지 방식의 처리량 비교. 조건부 UPDATE와 Redis Lua가 초과 예약 없이 가장 빨랐다">
-            <text class="k" x="22" y="34">처리량 · 초과 예약 0인 방식만</text>
-            <text x="22" y="54" style="font-size:11.5px">req/s · VU 100 · 커넥션 풀 20</text>
-            <rect class="bar" x="22" y="68" width="57" height="12" rx="6"/><text class="mono" x="88" y="78">synchronized 204</text>
-            <rect class="bar" x="22" y="90" width="201" height="12" rx="6"/><text class="mono" x="232" y="100">@Version 719</text>
-            <rect class="bar on" x="22" y="112" width="212" height="12" rx="6"/><text class="mono hi" x="242" y="122">조건부 758</text>
-            <rect class="bar on" x="22" y="134" width="177" height="12" rx="6"/><text class="mono hi" x="208" y="144">Redis Lua 633</text>
-            <text x="22" y="172" style="font-size:12px">naive 493 · 트랜잭션 안 synchronized 457 은</text>
-            <text x="22" y="188" style="font-size:12px">초과 예약이 나서 제외</text>
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="낙관적 락은 잠그지 않고 읽은 뒤 쓸 때 version이 그대로인지 확인하고, 다른 요청이 먼저 바꿨으면 재시도한다">
+            <text class="k" x="22" y="34">낙관적 락</text>
+            <text x="22" y="54" style="font-size:11.5px">@Version · 쓸 때 확인</text>
+            <rect class="box" x="22" y="70" width="276" height="28" rx="8"/>
+            <text class="mono" x="34" y="89">① 읽기 — 재고 3 · version 7</text>
+            <rect class="box" x="22" y="104" width="276" height="28" rx="8"/>
+            <text class="mono" x="34" y="123">② UPDATE … WHERE version = 7</text>
+            <text class="mono k" x="22" y="156">1행 → 성공</text>
+            <text class="mono hi" x="130" y="156">0행 → 충돌 → 재시도</text>
+            <text x="22" y="184" style="font-size:12px">요청이 몰리면 충돌·재시도가 늘어남</text>
           </svg>
         </div>
-        <h4>여섯 방식 비교</h4>
-        <p>잠금 없음, <code>synchronized</code> 두 범위, <code>@Version</code> 낙관적 락, 조건부 UPDATE, 비관적 락, Redis Lua를 전략 인터페이스로 갈아 끼우며 같은 조건에서 측정했습니다.</p>
+        <h4>낙관적 락</h4>
+        <p>잠그지 않고 읽은 뒤, 쓸 때 version이 그대로인지 확인합니다. 다른 요청이 먼저 바꿨으면 새 트랜잭션으로 재시도하므로, 한 상품에 요청이 몰리면 충돌과 재시도가 늘어납니다.</p>
       </div>
       <div class="feat">
         <div class="device">
-          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="Redis가 판정하고 DB가 기록하므로 둘 사이 어긋남을 Reconciliation이 DB 주문 상태 기준으로 정정한다">
-            <text class="k" x="22" y="34">Redis ↔ DB 정합성</text>
-            <text x="22" y="54" style="font-size:11.5px">재고의 진실은 DB 의 주문 상태</text>
-            <rect class="box" x="22" y="70" width="120" height="40" rx="8"/>
-            <text class="mono k" x="34" y="94">stock:{id}</text>
-            <rect class="box" x="178" y="70" width="120" height="40" rx="8"/>
-            <text class="mono k" x="190" y="94">users_orders</text>
-            <path d="M142 90 L178 90" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
-            <text class="mono hi" x="22" y="134">기대 = initial − 활성 − 픽업</text>
-            <text x="22" y="158" style="font-size:12px">60초마다 대조, 두 번 연속 같으면 정정</text>
-            <text x="22" y="180" style="font-size:12px">복구는 주문당 1회 (SET NX 가드)</text>
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="Redis Lua는 멱등키, 중복 예약, 재고를 한 번에 판정해 거절은 Redis에서 끝내고 통과한 요청만 DB에 기록한다">
+            <text class="k" x="22" y="34">Redis Lua</text>
+            <text x="22" y="54" style="font-size:11.5px">Redis 에서 판정 · 통과만 DB 로</text>
+            <rect class="box" x="22" y="70" width="276" height="34" rx="8"/>
+            <text class="mono" x="34" y="92">Lua: 멱등키 → 중복 → 재고 → 차감</text>
+            <path d="M90 104 L90 124" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <path d="M230 104 L230 124" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <rect class="box" x="22" y="124" width="136" height="30" rx="8"/>
+            <text class="mono" x="34" y="144">거절 → 409</text>
+            <rect class="box" x="164" y="124" width="134" height="30" rx="8"/>
+            <text class="mono k" x="176" y="144">통과 → DB 기록</text>
+            <text class="hi" x="22" y="182" style="font-size:12px">거절 요청은 DB 커넥션을 쓰지 않음</text>
           </svg>
         </div>
-        <h4>정합성 유지</h4>
-        <p>Redis 차감과 DB INSERT는 한 트랜잭션이 아닙니다. 그 사이에 서버가 죽어도 재고가 새지 않도록 보상, 1회 복구, Reconciliation을 두고 각각을 통합 테스트로 검증했습니다.</p>
+        <h4>Redis Lua</h4>
+        <p>Lua 스크립트 한 번으로 멱등키·중복 예약·재고를 판정하고 차감합니다. 통과한 요청만 DB에 주문을 기록하고, 거절은 DB에 닿지 않습니다.</p>
       </div>
     </div>
   </div>
