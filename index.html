@@ -6299,8 +6299,8 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       <h2 class="hero-display">주소 검색 성능 개선</h2>
       <div class="rolelead">
         <p class="rl-label">Overview</p>
-        <p>OCR로 읽은 비표준 주소를 표준 주소에 연결하는 검색을, 실무에서 쓰던 LCS 전수 탐색과 Elasticsearch <strong>n-gram 역색인</strong>으로 비교한 개인 성능 실험입니다.
-          개인정보 없는 합성 데이터로 100건부터 1천만 건까지 같은 조건을 재현해 정확도와 지연시간을 측정했고, 1만 건 근처에서 역색인이 앞서기 시작해 1천만 건에서는 <strong>196배</strong> 빨랐습니다.</p>
+        <p>OCR로 읽은 비표준 주소를 표준 주소에 연결하는 검색을, 실무에서 쓰던 LCS 전수 탐색과 Elasticsearch n-gram 역색인으로 비교했습니다.
+          개인정보 없는 합성 데이터로 100건부터 1천만 건까지 같은 조건을 재현해 정확도와 지연시간을 측정했습니다.</p>
       </div>
       <div class="meta">
         <div class="m"><span class="lbl">프로젝트 유형</span><span class="val">개인 성능 개선 실험</span></div>
@@ -6683,9 +6683,8 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       <h2 class="hero-display">이음 (IEUM)</h2>
       <div class="rolelead">
         <p class="rl-label">Overview</p>
-        <p>마감 할인 상품을 선착순으로 예약하는 서비스에서, 한정 재고에 요청이 몰려도 초과 예약이 나지 않도록 설계한 백엔드 프로젝트입니다.
-          잠금 없음부터 비관적·낙관적 락, 조건부 UPDATE, Redis Lua까지 <strong>여섯 가지 동시성 제어</strong>를 같은 부하로 측정해 비교했고, 거절 요청이 DB에 닿지 않는 Redis Lua 경로를 채택했습니다.
-          Redis와 DB 사이의 어긋남은 주문당 1회 복구와 Reconciliation으로 정합성을 유지합니다.</p>
+        <p>마감 할인 상품을 선착순으로 예약할 때, 한정 재고에 요청이 몰려도 초과 예약이 나지 않는 예약 서버를 설계했습니다.
+          잠금 없음부터 비관적·낙관적 락, 조건부 UPDATE, Redis Lua까지 여섯 가지 동시성 제어를 같은 부하로 측정해 비교했습니다.</p>
       </div>
       <div class="meta">
         <div class="m"><span class="lbl">프로젝트 유형</span><span class="val">개인 프로젝트 · 2026.09 – 진행 중</span></div>
