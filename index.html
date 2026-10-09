@@ -6443,7 +6443,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <div class="wrap">
     <p class="sectlabel">Deep Dive</p>
     <h3 class="display-md">작을 때는 단순하게,<br>커지면 역색인으로.</h3>
-    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">같은 seed와 오류 규칙으로 만든 주소를 두 방식에 넣었습니다. 정확도는 정답 ID로, 속도는 p50·p95와 QPS로 재서 어디서부터 역색인이 이기는지 확인했습니다. 교차점은 1만 건 근처였습니다.</p>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">같은 seed와 오류 규칙으로 만든 주소를 두 방식에 넣었습니다. 정확도를 정답 ID로, 속도를 p50·p95와 QPS로 확인한 결과, 1만 건 근처에서 교차됐습니다.</p>
     <div class="ts" style="margin-top:32px">
       <div class="tscard">
         <span class="tag tag--c">제약</span>
@@ -6818,7 +6818,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   <div class="wrap">
     <p class="sectlabel">Deep Dive</p>
     <h3 class="display-md">정합성은 모두 맞았다.<br>차이는 거절을 얼마나 싸게 하느냐.</h3>
-    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">초과 예약을 막는 방법은 여러 가지였습니다. 측정해 보니 갈린 지점은 재고가 바닥난 뒤의 수천 건, 이미 예약한 사용자의 중복 요청처럼 <strong>거절해야 하는 요청</strong>이 DB 자원을 얼마나 쓰느냐였습니다.</p>
+    <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">초과 예약을 막은 방식들을 같은 부하에 넣었습니다. 처리량과 DB 커넥션·행 락 사용량을 확인한 결과, 차이는 재고 소진 뒤나 중복 요청처럼 거절해야 하는 요청이 DB 자원을 얼마나 쓰느냐에서 났습니다.</p>
     <div class="ts" style="margin-top:32px">
       <div class="tscard">
         <span class="tag tag--c">제약</span>
