@@ -6709,20 +6709,20 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       </div>
       <div class="feat">
         <div class="device">
-          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="낙관적 락은 잠그지 않고 읽은 뒤 쓸 때 version이 그대로인지 확인하고, 다른 요청이 먼저 바꿨으면 재시도한다">
+          <svg class="abfig" viewBox="0 0 320 200" role="img" aria-label="요청 A와 B가 같은 재고와 version을 읽고, A가 먼저 써서 version이 올라가면 B의 쓰기는 0행이 되어 충돌로 처리되고 새로 읽어 재시도한다">
             <text class="k" x="22" y="34">낙관적 락</text>
-            <text x="22" y="54" style="font-size:11.5px">@Version · 쓸 때 확인</text>
-            <rect class="box" x="22" y="70" width="276" height="28" rx="8"/>
-            <text class="mono" x="34" y="89">① 읽기 — 재고 3 · version 7</text>
-            <rect class="box" x="22" y="104" width="276" height="28" rx="8"/>
-            <text class="mono" x="34" y="123">② UPDATE … WHERE version = 7</text>
-            <text class="mono k" x="22" y="156">1행 → 성공</text>
-            <text class="mono hi" x="130" y="156">0행 → 충돌 → 재시도</text>
-            <text x="22" y="184" style="font-size:12px">요청이 몰리면 충돌·재시도가 늘어남</text>
+            <text x="22" y="54" style="font-size:11.5px">@Version · 쓸 때 버전 확인</text>
+            <rect class="box" x="22" y="66" width="276" height="26" rx="8"/>
+            <text class="mono" x="32" y="84">① A·B 같이 읽음: 재고 3, v7</text>
+            <rect class="box" x="22" y="98" width="276" height="26" rx="8"/>
+            <text class="mono" x="32" y="116">② A 먼저 씀: 재고 2, v8</text>
+            <rect class="box" x="22" y="130" width="276" height="26" rx="8"/>
+            <text class="mono" x="32" y="148">③ B 씀: v7 기대 → 이미 v8</text>
+            <text class="hi" x="22" y="182" style="font-size:12px">B 는 충돌 → 새로 읽고 재시도</text>
           </svg>
         </div>
         <h4>낙관적 락</h4>
-        <p>잠그지 않고 읽은 뒤, 쓸 때 version이 그대로인지 확인합니다. 다른 요청이 먼저 바꿨으면 새 트랜잭션으로 재시도하므로, 한 상품에 요청이 몰리면 충돌과 재시도가 늘어납니다.</p>
+        <p>잠그지 않고 읽은 뒤, 쓸 때 version이 읽을 때와 같은지 확인합니다. 그사이 다른 요청이 먼저 써서 version이 올라갔으면 이 요청은 실패하고 새로 읽어 재시도하므로, 한 상품에 요청이 몰리면 충돌과 재시도가 늘어납니다.</p>
       </div>
       <div class="feat">
         <div class="device">
@@ -6731,12 +6731,12 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
             <text x="22" y="54" style="font-size:11.5px">Redis 에서 판정 · 통과만 DB 로</text>
             <rect class="box" x="22" y="70" width="276" height="34" rx="8"/>
             <text class="mono" x="34" y="92">Lua: 멱등키 → 중복 → 재고 → 차감</text>
-            <path d="M90 104 L90 124" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
-            <path d="M230 104 L230 124" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
-            <rect class="box" x="22" y="124" width="136" height="30" rx="8"/>
+            <path d="M80 104 L80 124" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <path d="M220 104 L220 124" style="stroke:var(--hairline);stroke-width:1.5;fill:none"/>
+            <rect class="box" x="22" y="124" width="116" height="30" rx="8"/>
             <text class="mono" x="34" y="144">거절 → 409</text>
-            <rect class="box" x="164" y="124" width="134" height="30" rx="8"/>
-            <text class="mono k" x="176" y="144">통과 → DB 기록</text>
+            <rect class="box" x="144" y="124" width="154" height="30" rx="8"/>
+            <text class="mono k" x="156" y="144">통과 → DB 기록</text>
             <text class="hi" x="22" y="182" style="font-size:12px">거절 요청은 DB 커넥션을 쓰지 않음</text>
           </svg>
         </div>
@@ -6784,7 +6784,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         <div class="cblock">
           <h4>동시성 제어 설계·측정</h4>
           <ul class="bul">
-            <li>여섯 차감 전략을 <code>StockDeductionStrategy</code> 구현체로 두고 환경변수 하나로 교체 — 같은 k6 시나리오(재고 100 / 요청 1만, 1,000명 × 100회 중복)로 측정해 ADR 두 편에 결과와 판단을 기록</li>
+            <li>비관적 락·낙관적 락·Redis Lua 를 <code>StockDeductionStrategy</code> 구현체로 두고 환경변수 하나로 교체 — 같은 k6 시나리오(1,000명 × 100회 중복 요청)로 측정해 ADR 에 결과와 판단을 기록</li>
             <li>Redis Lua 한 번으로 멱등키·사용자당 활성 예약·재고를 원자적으로 판정 — 10만 요청 중 DB 커넥션 획득 1,011회, 행 락 대기 0</li>
             <li>비관적 락은 <code>SELECT … FOR UPDATE</code>를 트랜잭션 첫 문장으로 — REPEATABLE READ 스냅샷이 잠금 이후에 생기게 해 중복 예약 검사의 틈을 닫음</li>
           </ul>
@@ -6866,7 +6866,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
   </div>
   <p class="legend"><span class="pv m">실측</span>직접 측정한 값 &nbsp;·&nbsp; 2026-09-12 ~ 10-09 · Windows 11 단일 PC · MySQL 8.4 · Redis 7.4 (Docker) · HikariCP 20 · k6</p>
 
-  <h4 class="sec">재고 100 / 요청 1만 — 여섯 방식</h4>
+  <h4 class="sec">1차 비교 — 재고 100 / 요청 1만</h4>
   <div class="table-wrap">
     <table>
       <thead><tr><th>방식</th><th>201</th><th>초과 예약</th><th>p99</th><th>처리량</th><th>비고</th></tr></thead>
