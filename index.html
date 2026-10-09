@@ -7215,30 +7215,30 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 <section class="tile tile--light">
   <div class="wrap">
     <p class="sectlabel">Trouble Shooting</p>
-    <h3 class="display-md">낙관적 락의 19%가 500 — 범인은 SQL 순서</h3>
+    <h3 class="display-md">버튼을 여러 번 누른 사용자가 예약을 두 개 갖는 문제</h3>
     <div class="ts">
       <div class="tscard">
         <span class="tag tag--t">Trouble</span>
         <ul>
-          <li><code>@Version</code> 을 붙이자 초과 예약은 0 이 됐지만, 요청 1만 건 중 <strong>1,926건(19%)이 500</strong></li>
-          <li>로그는 모두 MySQL <code>Deadlock found when trying to get lock</code> — 재고 한 행만 갱신하는데 데드락이 날 이유가 보이지 않음</li>
-          <li>잠금 없는 naive 에서는 같은 부하에 데드락이 0</li>
+          <li>사용자가 예약 버튼을 여러 번 누르면 같은 상품에 대한 요청이 동시에 들어옴</li>
+          <li>중복 예약 검사는 "활성 예약이 있는지 조회 → 없으면 저장". 두 요청이 같은 순간에 조회하면 둘 다 "없음"을 보고 둘 다 예약됨</li>
+          <li>네트워크 재시도로 같은 요청이 다시 오면 새 예약으로 처리될 위험</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--c">Cause</span>
         <ul>
-          <li>IDENTITY 로 즉시 나가는 <code>INSERT users_orders</code> 가 FK 검사로 <code>stores_items</code> 행에 <strong>S 락</strong>을 잡음</li>
-          <li>커밋 직전 flush 로 나가는 <code>UPDATE stores_items</code> 가 같은 행에 <strong>X 락</strong>을 요구 — 두 트랜잭션이 서로의 S 락에 막힘</li>
-          <li>naive 는 벌크 UPDATE 가 INSERT 보다 먼저 실행돼 이 순서가 생기지 않았음. 문제는 <code>@Version</code> 이 아니라 누가 어떤 순서로 잠그느냐</li>
+          <li>검사와 저장이 하나의 원자 연산이 아님. 재고 차감만 원자적이면 초과 예약은 막아도 중복 예약은 못 막음</li>
+          <li>비관적 락을 걸어도, 잠금 전에 일반 SELECT 를 하면 MySQL REPEATABLE READ 스냅샷이 잠금 이전 시점에 만들어짐 — 잠금을 기다리는 동안 커밋된 앞 요청의 주문이 이 트랜잭션에는 보이지 않음</li>
         </ul>
       </div>
       <div class="tscard">
         <span class="tag tag--s">Solution</span>
         <ul>
-          <li>재고 감소 직후 <code>flush()</code> 해 UPDATE 를 INSERT 앞으로 — X 락을 먼저 선점</li>
-          <li>데드락 희생자(<code>CannotAcquireLockException</code>) 도 재시도 대상에 추가하고 카운터로 분리 집계</li>
-          <li>재측정: <strong>500 0 · 데드락 0 · 롤백된 INSERT 0</strong>. 이후 비관적 락도 같은 원리로 잠금을 트랜잭션 첫 문장에 둠</li>
+          <li>비관적 락 — <code>SELECT … FOR UPDATE</code> 를 트랜잭션 첫 문장으로 옮겨, 스냅샷이 잠금 이후에 생기게 함</li>
+          <li>Redis Lua — 활성 사용자 SET 확인, 재고 차감, SET 등록을 스크립트 하나로 실행해 판정 사이에 끼어들 틈을 없앰</li>
+          <li>Idempotency-Key — 같은 키의 재요청은 DB unique(account, key)로 처음 만든 주문을 그대로 돌려줌</li>
+          <li>1,000명이 4건씩 동시에 보낸 10만 요청에서 <strong>사용자당 2건 이상 0</strong> — 통합 테스트로 고정</li>
         </ul>
       </div>
     </div>
