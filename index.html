@@ -1898,6 +1898,12 @@
   .abfig .chip.on{fill:var(--primary); stroke:none;}
   .abfig .chip.on + text{fill:#fff;}
   .contrib__img .abfig{border-radius:0; background:var(--canvas);}
+  /* 채팅 v1/v2 전환 — 탭 안의 하위 버전. hidden 이 display 지정에 지지 않도록 명시한다 */
+  .vf .chatver[hidden], .vf .stagelog[hidden] { display: none !important; }
+  .vf .demo-bar.verbar { padding: 0 0 8px; }
+  .vf pre.code { background:#0d0d0f; color:#d6d6dc; border-radius:10px; padding:16px 18px; overflow-x:auto;
+    font-family:var(--code); font-size:12.5px; line-height:1.6; letter-spacing:0; margin:16px 0 24px; max-width:none; }
+  .vf pre.code code { background:none; color:inherit; padding:0; font-size:inherit; }
 </style>
 </head>
 <body>
@@ -2123,7 +2129,7 @@
 <section class="tile tile--light tile--tight" id="vf-deep">
   <div class="wrap">
     <p class="sectlabel">Architecture</p>
-    <h3 class="display-md">담당 범위를 열 갈래로 나눠 기록했습니다</h3>
+    <h3 class="display-md">담당 범위를 아홉 갈래로 나눠 기록했습니다</h3>
     <p class="lead" style="max-width:60ch;font-size:clamp(17px,1.9vw,21px)">요청 경로부터 배포와 개발 하네스까지, 직접 설계·구현한 부분만 다이어그램과 실측치로 정리했습니다.</p>
   </div>
 </section>
@@ -3137,8 +3143,289 @@
   <div role="tabpanel" id="p-chat" aria-labelledby="t-chat" tabindex="0" hidden>
     <div class="panel-head">
       <h2>실시간 채팅</h2>
-      <p class="sub">전송 POST · 수신 SSE · Redis pub/sub 중계</p>
+      <p class="sub">v1 구단별 영구 채팅 → v2 경기별 하루 채팅 · 전송 POST · 수신 SSE</p>
     </div>
+
+    <div class="demo-bar verbar" role="group" aria-label="채팅 버전">
+      <label>버전</label>
+      <button type="button" class="opt" data-chatver="v2" aria-pressed="true">v2 · 경기별 하루 채팅 (현재)</button>
+      <button type="button" class="opt" data-chatver="v1" aria-pressed="false">v1 · 구단별 영구 채팅</button>
+    </div>
+
+    <div class="chatver" data-chatver="v2">
+    <div class="stats">
+      <div class="stat vfhero">
+        <span class="lbl">요청 경로의 쓰기 지점 <span class="pv s">설계값</span></span>
+        <span class="val">1<span class="u">곳</span></span>
+        <span class="note">Kafka ack 하나로 응답합니다<br>DB·Stream 은 요청 경로 밖</span>
+      </div>
+      <div class="stat">
+        <span class="lbl">끊긴 구간 복구 <span class="pv s">설계값</span></span>
+        <span class="val">2,500<span class="u">건</span></span>
+        <span class="note">Last-Event-ID 이후를 Stream 에서<br>넘치면 reset 후 히스토리로</span>
+      </div>
+      <div class="stat">
+        <span class="lbl">접속당 쓰기 <span class="pv s">설계값</span></span>
+        <span class="val">≤7<span class="u">회/초</span></span>
+        <span class="note">150ms 배칭 — 메시지율과 무관<br>한 방이 과열돼도 고정</span>
+      </div>
+      <div class="stat">
+        <span class="lbl">메시지 수명 <span class="pv s">설계값</span></span>
+        <span class="val">24<span class="u">시간</span></span>
+        <span class="note">00:00 KST 방 생성 · 다음 자정 소멸<br>RDB 에 남지 않습니다</span>
+      </div>
+    </div>
+
+    <h4 class="sec">기획이 어떻게 바뀌었고, 그래서 무엇을 골랐나</h4>
+
+    <div class="col">
+      <p class="lede">v1 은 응원 구단별로 늘 열려 있는 방이었습니다. v2 에서 기획이 <strong>그날 경기를 함께 보는
+        사람들의 하루짜리 방</strong>으로 바뀌었습니다. 방은 경기마다 매일 새로 열리고, 응원 팀과 상관없이 누구나
+        들어오며, 다음 자정이 지나면 대화가 남지 않습니다. 이 기획에서 나온 요구와 각각에 맞춰 고른 설계를 짝지었습니다.</p>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>영역</th><th>바뀐 기획이 요구하는 것</th><th>그래서 v2 에서는</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>방 단위</td><td>같은 경기를 보는 양 팀 팬이 한 방에서 이야기합니다. 방은 경기마다 그날 하루만 존재합니다.</td><td><strong>오늘 경기 단위로 방을 엽니다.</strong> 00:00 KST 에 그날 경기로 방을 만들고 로그인 사용자 누구나 들어옵니다.</td></tr>
+          <tr><td>저장</td><td>대화는 다음 자정에 사라집니다. 영구 저장소가 필요 없고, 탈퇴자 메시지를 옮겨 둘 이유도 없습니다.</td><td><strong>RDB 에 저장하지 않습니다.</strong> 원문은 Kafka 에 48시간, 조회용 사본은 Redis Stream 에 하루만 둡니다. 방 키 TTL 로 자정에 함께 사라져 이관 로직도 필요 없습니다.</td></tr>
+          <tr><td>쓰기 경로</td><td>DB 가 빠지면 전달과 히스토리가 같은 원본에서 나와야 둘이 어긋나지 않습니다.</td><td><strong>쓰기 지점을 Kafka 하나로 둡니다.</strong> 전달과 히스토리 저장은 그 로그를 읽는 소비자가 각자 맡아, 둘 중 하나만 성공하는 상태가 생기지 않습니다.</td></tr>
+          <tr><td>끊긴 구간</td><td>경기 중 대화는 그 순간의 장면을 두고 오갑니다. SSE 가 끊긴 사이(30분 타임아웃·파드 재시작·네트워크) 들어온 메시지를 이어서 돌려줘야 합니다.</td><td><strong>Kafka 로그 + Stream 사본으로 복구합니다.</strong> 재접속 때 Last-Event-ID 이후를 Stream 에서 먼저 채운 뒤 실시간에 합류시킵니다.</td></tr>
+          <tr><td>중복</td><td>전송은 Kafka 적재만 확인하고 바로 답합니다. 응답을 못 받은 클라이언트가 재시도해도 같은 메시지가 두 번 생기면 안 됩니다.</td><td><strong>메시지마다 clientMsgId 를 받아 멱등 키로 씁니다.</strong> 같은 키가 다시 오면 처음과 같은 202 와 msgId 를 돌려줍니다.</td></tr>
+          <tr><td>팬아웃</td><td>두 팀 팬이 한 방에 모이고 대화가 경기 시간에 몰립니다. 소켓 쓰기가 "메시지 수 × 접속자 수"로 늘어나지 않아야 합니다.</td><td><strong>150ms 마다 묶어 보냅니다.</strong> 접속당 쓰기가 메시지율과 무관하게 초당 7회 이하로 고정됩니다.</td></tr>
+          <tr><td>히스토리</td><td>경기 중에는 메시지가 빠르게 쌓입니다. 위로 스크롤하는 동안 새 메시지가 들어와도 페이지가 밀리지 않아야 합니다.</td><td><strong>msgId 커서 페이징을 씁니다.</strong> Stream 의 ID 범위 조회라 페이지가 밀리지 않습니다.</td></tr>
+          <tr><td>배포 단위</td><td>채팅은 경기 시간에 맞춰 퀴즈와 다르게 붐빕니다. 장시간 SSE 연결이 퀴즈 요청과 같은 파드 자원을 나눠 쓰지 않아야 합니다.</td><td><strong>전용 chat-app 으로 분리했습니다.</strong> API · 게이트웨이 · history-writer 를 역할 플래그로 나눠, 나중에 접속 수 기준으로 게이트웨이만 늘릴 수 있습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="sec">바뀐 아키텍처</h4>
+
+    <div class="col">
+      <p>전송 요청이 하는 일은 넷뿐입니다. 검증·마스킹, Redis 멱등 키, Kafka 적재, 202 응답.
+        전달과 히스토리 저장은 <strong>Kafka 를 읽는 두 소비자</strong>가 각자 맡습니다. 게이트웨이는
+        컨슈머 그룹 없이 전 파티션을 직접 할당받아 리밸런스가 없고, history-writer 는 그룹으로
+        오프셋을 커밋합니다.</p>
+    </div>
+
+    <div class="demo flowdemo" id="c2-root">
+      <div class="demo-bar">
+        <label>시연</label>
+        <button type="button" class="opt" id="c2-mode-send" aria-pressed="true">메시지 전송</button>
+        <button type="button" class="opt" id="c2-mode-rec" aria-pressed="false">재접속 복구</button>
+        <button type="button" id="c2-run">실행</button>
+      </div>
+
+      <div class="demo-pane">
+        <h5>전달 경로 <span id="c2-progress">0 / 8</span></h5>
+        <div class="fig-scroll">
+          <svg id="c2-svg" viewBox="0 -8 770 438" role="img"
+               aria-label="사용자 A의 메시지가 CloudFront와 ALB를 지나 chat API 파드에 도착해 Redis 에서 중복 전송인지 확인하고 Kafka에 적재된 뒤 접수 완료로 응답한다. Kafka를 읽는 게이트웨이 파드 두 개가 각자 들고 있는 SSE 연결로 사용자 B와 C에게 전달하고, history-writer는 같은 로그를 Redis Stream에 옮겨 적는다.">
+            <defs>
+              <marker id="cm2" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto">
+                <polygon points="0,0 10,4 0,8" fill="currentColor"/></marker>
+            </defs>
+
+            <rect class="zonebox" x="370" y="108" width="390" height="230" rx="4"/>
+            <text class="wlabel" x="380" y="333">EKS — chat-app · 역할 플래그(API · 게이트웨이 · history-writer)</text>
+
+            <line class="wire" id="c2w1" x1="112" y1="161" x2="136" y2="161" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w2" x1="244" y1="161" x2="272" y2="161" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w3" x1="354" y1="161" x2="378" y2="161" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w4" x1="440" y1="120" x2="440" y2="80" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w5" x1="530" y1="161" x2="558" y2="161" marker-end="url(#cm2)"/>
+            <polyline class="wire" id="c2w6" points="400,200 400,222 62,222 62,200" marker-end="url(#cm2)"/>
+            <polyline class="wire" id="c2w7a" points="610,200 610,232 455,232 455,250" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w7b" x1="680" y1="200" x2="680" y2="250" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w7c" x1="710" y1="120" x2="710" y2="80" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w8a" x1="455" y1="318" x2="455" y2="358" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w8b" x1="660" y1="318" x2="660" y2="358" marker-end="url(#cm2)"/>
+            <line class="wire" id="c2w8c" x1="610" y1="48" x2="562" y2="48" marker-end="url(#cm2)"/>
+            <polyline class="wire" id="c2wr" points="740,290 756,290 756,12 475,12 475,22" marker-end="url(#cm2)"/>
+
+            <text class="wlabel" x="124" y="122" text-anchor="middle">POST</text>
+            <text class="wlabel" x="434" y="100" text-anchor="end">중복 확인</text>
+            <text class="wlabel" x="545" y="113" text-anchor="middle">기록</text>
+            <text class="wlabel" x="230" y="240" text-anchor="middle">접수 완료 응답</text>
+            <text class="wlabel" x="530" y="246" text-anchor="middle">읽기</text>
+            <text class="wlabel" x="716" y="100">읽기</text>
+            <text class="wlabel" x="586" y="40" text-anchor="middle">사본 저장</text>
+            <text class="wlabel" x="748" y="9" text-anchor="end">재접속 시 놓친 메시지 조회</text>
+            <text class="wlabel" x="463" y="344">0.15초씩 묶어 전달</text>
+            <text class="wlabel" x="668" y="344">0.15초씩 묶어 전달</text>
+
+            <g class="node" id="c2-a">
+              <rect x="12" y="134" width="100" height="66" rx="3"/>
+              <text class="ntitle" x="24" y="156">사용자 A</text>
+              <text class="nsub" x="24" y="172">보내는 사람</text>
+              <text class="msg" id="c2-msg-a" x="24" y="190"></text>
+            </g>
+
+            <g class="node" id="c2-cf">
+              <rect x="136" y="126" width="108" height="70" rx="3"/>
+              <text class="ntitle" x="148" y="150">CloudFront</text>
+              <text class="nsub" x="148" y="167">채팅은 캐시 끔</text>
+              <text class="nsub" x="148" y="182">그대로 통과</text>
+            </g>
+
+            <g class="node" id="c2-alb">
+              <rect x="272" y="134" width="82" height="54" rx="3"/>
+              <text class="ntitle" x="284" y="156">ALB</text>
+              <text class="nsub" x="284" y="172">아무 파드로</text>
+            </g>
+
+            <g class="node" id="c2-redis">
+              <rect x="380" y="22" width="180" height="56" rx="3"/>
+              <text class="ntitle" x="392" y="44">Redis</text>
+              <text class="nsub" x="392" y="62">중복 확인 · 대화 사본</text>
+            </g>
+
+            <g class="node" id="c2-writer">
+              <rect x="612" y="22" width="134" height="56" rx="3"/>
+              <text class="ntitle" x="624" y="44">history-writer</text>
+              <text class="nsub" x="624" y="62">대화 사본 작성</text>
+            </g>
+
+            <g class="node" id="c2-api">
+              <rect x="380" y="120" width="150" height="80" rx="3"/>
+              <text class="ntitle" x="392" y="142">chat · API</text>
+              <text class="nsub" x="392" y="159">검사 · 욕설 가림</text>
+              <text class="nsub" x="392" y="174">중복 전송 확인</text>
+              <text class="nsub" x="392" y="189">Kafka 에만 기록</text>
+            </g>
+
+            <g class="node" id="c2-kafka">
+              <rect x="560" y="120" width="186" height="80" rx="3"/>
+              <text class="ntitle" x="572" y="142">Kafka — chat-messages</text>
+              <text class="nsub" x="572" y="159">메시지 원본 · 48시간 보관</text>
+              <text class="nsub" x="572" y="174">경기별로 순서 유지</text>
+              <text class="nsub" x="572" y="189">모든 메시지가 먼저 여기로</text>
+            </g>
+
+            <g class="node" id="c2-gw1">
+              <rect x="380" y="250" width="150" height="68" rx="3"/>
+              <text class="ntitle" x="392" y="272">게이트웨이 파드 1</text>
+              <text class="nsub" x="392" y="289">Kafka 에서 읽어 전달</text>
+              <text class="nsub" x="392" y="304">사용자 C 와 연결됨</text>
+            </g>
+
+            <g class="node" id="c2-gw2">
+              <rect x="560" y="250" width="180" height="68" rx="3"/>
+              <text class="ntitle" x="572" y="272">게이트웨이 파드 2</text>
+              <text class="nsub" x="572" y="289">Kafka 에서 읽어 전달</text>
+              <text class="nsub" x="572" y="304">사용자 B 와 연결됨</text>
+            </g>
+
+            <g class="node" id="c2-c">
+              <rect x="380" y="358" width="150" height="54" rx="3"/>
+              <text class="ntitle" x="392" y="380">사용자 C</text>
+              <text class="msg" id="c2-msg-c" x="392" y="400"></text>
+            </g>
+
+            <g class="node" id="c2-b">
+              <rect x="560" y="358" width="180" height="54" rx="3"/>
+              <text class="ntitle" x="572" y="380">사용자 B</text>
+              <text class="msg" id="c2-msg-b" x="572" y="400"></text>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="demo-pane stagewrap">
+        <h5>단계별 처리 내용</h5>
+        <ol class="stagelog" id="c2-log-send">
+          <li><span class="st">전송 — 메시지마다 UUID</span><span class="sd">POST /chat/rooms/{gameId}/messages · 본문에 clientMsgId 를 실어 재시도해도 같은 메시지로 인식되게 합니다</span></li>
+          <li><span class="st">엣지 통과</span><span class="sd">/chat/* 는 /rt/* 와 같은 behavior — 캐시와 압축을 끕니다</span></li>
+          <li><span class="st">파드 선택</span><span class="sd">ALB 가 고른 파드가 이 방의 구독자를 갖고 있을 필요가 없습니다</span></li>
+          <li><span class="st">검증 → 멱등 키</span><span class="sd">방 확인 → 길이 → 글자 수만큼 * 마스킹 → 사용자당 초당 3회 → SET NX 120초. 이미 있으면 처음과 같은 202 를 다시 돌려줍니다</span></li>
+          <li><span class="st">Kafka 적재 — 유일한 쓰기</span><span class="sd">key = gameId 라 한 방은 한 파티션에 순서대로 쌓입니다. ack 와 함께 받은 offset 이 곧 msgId 입니다</span></li>
+          <li><span class="st">202 응답</span><span class="sd">DB 도 Stream 도 쓰지 않았습니다. 응답 시간은 Kafka ack 하나로 고정됩니다</span></li>
+          <li><span class="st">두 소비자가 각자 읽음</span><span class="sd">게이트웨이는 assign() 으로 전 파티션을 끝에서부터, history-writer 는 컨슈머 그룹으로 읽습니다. 느린 쪽이 다른 쪽을 늦추지 않습니다</span></li>
+          <li><span class="st">전달과 사본 저장</span><span class="sd">게이트웨이는 150ms 마다 묶어 SSE 이벤트 하나로 push · writer 는 XADD {offset}-1 로 Stream 에 옮겨 적습니다</span></li>
+        </ol>
+        <ol class="stagelog" id="c2-log-rec" hidden>
+          <li><span class="st">재접속 — 마지막 id 와 함께</span><span class="sd">30분 타임아웃·파드 재시작·네트워크 끊김 뒤 브라우저가 Last-Event-ID 헤더에 마지막으로 받은 msgId 를 실어 다시 붙습니다</span></li>
+          <li><span class="st">등록 · :connected</span><span class="sd">어느 파드에 붙든 상관없습니다. 등록 직후 주석 한 줄을 써서 응답 헤더를 바로 내보냅니다</span></li>
+          <li><span class="st">놓친 구간 조회</span><span class="sd">XRANGE chat:game:{gameId} 로 lastId 이후를 500건씩, 최대 5회. 블라인드된 메시지는 걸러냅니다</span></li>
+          <li><span class="st">복구분 먼저</span><span class="sd">그동안 들어온 실시간 프레임은 붙잡아 두었다가 복구분 뒤에 이어 보냅니다 — 순서가 뒤집히지 않습니다</span></li>
+          <li><span class="st">실시간 합류</span><span class="sd">2,500건을 넘게 놓쳤으면 reset 하나를 보내고 클라이언트가 히스토리 API 로 다시 받습니다</span></li>
+        </ol>
+      </div>
+    </div>
+
+    <h4 class="sec">요청 경로 — 기록은 Kafka 한 곳에만</h4>
+
+    <div class="col">
+      <pre class="code"><code>요청:  전송 → 중복 확인 → Kafka 에 기록 → 접수 응답
+이후:  Kafka → 게이트웨이 → 접속자에게 전달
+       Kafka → history-writer → 대화 사본 저장</code></pre>
+      <ul class="plain">
+        <li><strong>한 곳에만 기록합니다.</strong> Redis 와 Kafka 에 따로 쓰면 한쪽만 성공할 수 있습니다.
+          Kafka 에만 쓰고 나머지는 거기서 읽어 가므로 둘이 어긋나지 않습니다.</li>
+        <li><strong>메시지 번호는 Kafka 순번입니다.</strong> 같은 방의 메시지는 도착 순서대로 번호가 붙어
+          순서가 뒤집히지 않습니다. 이 번호 하나로 전달 · 스크롤 · 재접속 복구 · 신고를 모두 처리합니다.</li>
+      </ul>
+    </div>
+
+    <h4 class="sec">기술 선택 이유</h4>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>관점</th><th>Redis pub/sub (v1)</th><th>Redis Stream</th><th>Kafka</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>내구성</td><td>없음 — fire-and-forget</td><td>메모리 + 비동기 영속화(AOF)</td><td>디스크 로그. ack 받은 메시지는 남습니다</td></tr>
+          <tr><td>소비 위치</td><td>없음</td><td>소비자가 ID 를 직접 관리</td><td>그룹별 offset — 새 소비자를 프로듀서 수정 없이 추가</td></tr>
+          <tr><td>순서</td><td>채널 단위</td><td>키 단위</td><td>파티션 키(gameId) 단위 + 파티션 간 병렬</td></tr>
+          <tr><td>역압</td><td>느린 소비자 = 유실</td><td>소비자가 pull</td><td>소비자가 자기 속도로 pull · 랙이 지표로 보입니다</td></tr>
+          <tr><td>범위 조회</td><td>불가</td><td><strong>XREVRANGE · XRANGE — O(log N + M)</strong></td><td>불가 — "최근 30건" 같은 임의 접근이 안 됩니다</td></tr>
+          <tr><td>보존</td><td>없음</td><td>키 TTL — 방 키 하나로 하루치가 함께 소멸</td><td>시간 기반(48h)</td></tr>
+          <tr><td>v2 에서 맡은 일</td><td>— (전달 경로에서 제외)</td><td>히스토리 · 커서 페이징 · 재접속 복구</td><td>유일한 쓰기 · 전달 · 재생</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <ul class="plain">
+        <li><strong>RDB 에 두지 않은 이유.</strong> 기획상 경기 채팅은 다음 자정에 사라집니다. 하루 뒤 버릴
+          데이터를 영구 저장소에 쌓을 이유가 없고, 같은 EC2 에서 Redis 와 메모리를 나눠 쓰는 MySQL 의 부담도
+          늘리지 않습니다. 탈퇴 시 메시지를 (알수없음) 계정으로 옮기는 이관 로직도 필요 없어졌습니다.</li>
+        <li><strong>Kafka 를 고른 이유.</strong> 쓰기 경로와 읽기 경로가 갈라지고, 202 를 돌려준 메시지를 잃지
+          않으며, offset 으로 재생할 수 있습니다. 히스토리 저장이 밀려도 전달은 늦어지지 않습니다.</li>
+        <li><strong>Redis Stream 을 함께 둔 이유.</strong> Kafka 는 진실이 되는 로그이지 조회 저장소가 아닙니다.
+          입장 시 최근 30건, 위로 스크롤, 재접속 복구는 모두 ID 범위 조회라 Stream 이 정확히 맞습니다.
+          사본이라 날아가도 Kafka 에서 다시 만들 수 있습니다.</li>
+      </ul>
+    </div>
+
+    <h4 class="sec">v1 과 v2 비교</h4>
+
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>항목</th><th>v1 — 구단별 영구 채팅</th><th>v2 — 경기별 하루 채팅</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>방 단위</td><td>응원 구단별 고정 방</td><td>오늘 경기별 · 00:00 KST 생성, 다음 자정 소멸</td></tr>
+          <tr><td>입장 권한</td><td>응원 구단 방만</td><td>로그인 사용자 누구나</td></tr>
+          <tr><td>저장</td><td>MySQL 영구 저장</td><td>RDB 없음 · Kafka 48h + Redis Stream 하루 사본</td></tr>
+          <tr><td>파드 간 전달</td><td>Redis pub/sub</td><td>Kafka — 그룹 없는 assign() 소비</td></tr>
+          <tr><td>전송 응답</td><td>201 — 저장 후</td><td>202 — Kafka ack 후, msgId = offset</td></tr>
+          <tr><td>재시도 중복</td><td>막지 않음</td><td>clientMsgId 멱등 키 · 같은 202 재반환</td></tr>
+          <tr><td>끊긴 구간</td><td>유실</td><td>Last-Event-ID 로 복구 (최대 2,500건)</td></tr>
+          <tr><td>히스토리</td><td>오프셋 페이징 <code>?page=</code></td><td>커서 페이징 <code>?cursor=</code> · XREVRANGE</td></tr>
+          <tr><td>SSE 이벤트</td><td>메시지 1건 = 이벤트 1개</td><td>150ms 배칭 — 이벤트 하나에 메시지 배열</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    </div>
+
+    <div class="chatver" data-chatver="v1" hidden>
 
     <div class="stats">
       <div class="stat vfhero">
@@ -3278,24 +3565,6 @@
       </div>
     </div>
 
-    <h4 class="sec">엔드포인트</h4>
-
-    <div class="tw">
-      <table>
-        <caption>모두 JWT 인증을 거칩니다.</caption>
-        <thead>
-          <tr><th>메서드</th><th>경로</th><th>역할</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="mono">GET</td><td class="mono">/rt/chat/rooms</td><td>구단별 방 목록</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/rt/chat/rooms/{uid}</td><td>방 상세</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/rt/chat/rooms/{uid}/subscribe</td><td>SSE 구독 — <code>text/event-stream</code></td></tr>
-          <tr><td class="mono">DELETE</td><td class="mono">/rt/chat/rooms/{uid}/subscribe</td><td>명시적 퇴장</td></tr>
-          <tr><td class="mono">POST</td><td class="mono">/rt/chat/rooms/{uid}/messages</td><td>메시지 전송</td></tr>
-        </tbody>
-      </table>
-    </div>
-
     <h4 class="sec">연결 유지 값</h4>
 
     <div class="tw">
@@ -3321,6 +3590,7 @@
       <p>FE는 표준 <code>EventSource</code>를 쓰지 않습니다. 커스텀 헤더를 실을 수 없어
         <code>Authorization: Bearer</code>를 붙일 방법이 없습니다. 대신 <code>fetch</code>로 스트림을 열고
         프레임을 직접 파싱합니다.</p>
+    </div>
     </div>
   </div>
 
@@ -8090,6 +8360,195 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
     idle();
 
     // 탭을 떠났다 돌아오면 대기 상태로 되돌린다 — 중간에 얼어 있는 화면을 남기지 않는다
+    document.addEventListener('vf:tabshown', e => {
+      if (e.detail && e.detail.panel === 'p-chat') { runId++; idle(); }
+    });
+  })();
+</script>
+<script>
+  // ── 채팅 v1/v2 전환 + v2 전달 경로 시연 ────────────────────────────────
+  // v1 시연과 같은 엔진이다. v2 는 "쓰기 한 곳(Kafka) → 두 소비자"가 핵심이라
+  // 전송 흐름 외에 v1 에 없던 재접속 복구 흐름을 따로 보여준다.
+  (function () {
+    const bar = document.querySelector('#p-chat .verbar');
+    if (bar) {
+      const btns = [...bar.querySelectorAll('button[data-chatver]')];
+      const blocks = [...document.querySelectorAll('#p-chat .chatver')];
+      btns.forEach(b => b.addEventListener('click', () => {
+        const v = b.dataset.chatver;
+        btns.forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+        blocks.forEach(el => { el.hidden = el.dataset.chatver !== v; });
+        // 전환 때 진행 중인 시연을 멈추고 대기 상태로 — 두 시연 모두 이 이벤트로 초기화된다
+        document.dispatchEvent(new CustomEvent('vf:tabshown', { detail: { panel: 'p-chat' } }));
+      }));
+    }
+
+    const ROOT = document.getElementById('c2-root');
+    if (!ROOT) return;
+
+    const svg = ROOT.querySelector('#c2-svg');
+    const prog = ROOT.querySelector('#c2-progress');
+    const runBtn = ROOT.querySelector('#c2-run');
+    const modeSend = ROOT.querySelector('#c2-mode-send');
+    const modeRec = ROOT.querySelector('#c2-mode-rec');
+    const logSend = ROOT.querySelector('#c2-log-send');
+    const logRec = ROOT.querySelector('#c2-log-rec');
+    const msgA = ROOT.querySelector('#c2-msg-a');
+    const msgB = ROOT.querySelector('#c2-msg-b');
+    const msgC = ROOT.querySelector('#c2-msg-c');
+    const NS = 'http://www.w3.org/2000/svg';
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const SEND = [
+      { nodes: ['c2-a', 'c2-cf'], wires: ['c2w1'], legs: [[[112, 161], [136, 161]]] },
+      { nodes: ['c2-cf', 'c2-alb'], wires: ['c2w2'], legs: [[[244, 161], [272, 161]]] },
+      { nodes: ['c2-alb', 'c2-api'], wires: ['c2w3'], legs: [[[354, 161], [380, 161]]] },
+      { nodes: ['c2-api', 'c2-redis'], wires: ['c2w4'], legs: [[[440, 120], [440, 78]]] },
+      { nodes: ['c2-api', 'c2-kafka'], wires: ['c2w5'], legs: [[[530, 161], [560, 161]]] },
+      { nodes: ['c2-api', 'c2-a'], wires: ['c2w6'], legs: [[[400, 200], [400, 222], [62, 222], [62, 200]]],
+        after() { msgA.textContent = '접수됨 · 41번'; } },
+      { nodes: ['c2-kafka', 'c2-gw1', 'c2-gw2', 'c2-writer'], wires: ['c2w7a', 'c2w7b', 'c2w7c'],
+        legs: [[[610, 200], [610, 232], [455, 232], [455, 250]], [[680, 200], [680, 250]], [[710, 120], [710, 78]]] },
+      { nodes: ['c2-gw1', 'c2-gw2', 'c2-c', 'c2-b', 'c2-writer', 'c2-redis'], wires: ['c2w8a', 'c2w8b', 'c2w8c'],
+        legs: [[[455, 318], [455, 358]], [[660, 318], [660, 358]], [[612, 48], [560, 48]]],
+        after(shown) { msgC.textContent = shown; msgB.textContent = shown; } }
+    ];
+
+    const REC = [
+      { nodes: ['c2-b', 'c2-gw2'], wires: ['c2w8b'], legs: [[[660, 358], [660, 318]]],
+        before() { msgB.textContent = '마지막으로 받은 38번'; } },
+      { nodes: ['c2-gw2'], wires: [], legs: [] },
+      { nodes: ['c2-gw2', 'c2-redis'], wires: ['c2wr'], legs: [[[740, 290], [756, 290], [756, 12], [475, 12], [475, 22]]] },
+      { nodes: ['c2-redis', 'c2-gw2'], wires: ['c2wr'], legs: [[[475, 22], [475, 12], [756, 12], [756, 290], [740, 290]]] },
+      { nodes: ['c2-gw2', 'c2-b'], wires: ['c2w8b'], legs: [[[660, 318], [660, 358]]],
+        after() { msgB.textContent = '놓친 39~41번 → 실시간'; } }
+    ];
+
+    let mode = 'send';
+    let runId = 0;
+    const stages = () => (mode === 'send' ? SEND : REC);
+    const logItems = () => [...(mode === 'send' ? logSend : logRec).querySelectorAll('li')];
+
+    function clearMarks() {
+      svg.querySelectorAll('.vfdot, .halo').forEach(d => d.remove());
+      svg.querySelectorAll('.node').forEach(n => n.classList.remove('on', 'done'));
+      svg.querySelectorAll('.wire').forEach(w => w.classList.remove('lit'));
+      ROOT.querySelectorAll('.stagelog li').forEach(li => li.classList.remove('on'));
+    }
+
+    function idle() {
+      clearMarks();
+      msgA.textContent = ''; msgB.textContent = ''; msgC.textContent = '';
+      prog.textContent = '0 / ' + stages().length;
+    }
+
+    function setMode(m) {
+      mode = m;
+      runId++;
+      modeSend.setAttribute('aria-pressed', m === 'send' ? 'true' : 'false');
+      modeRec.setAttribute('aria-pressed', m === 'rec' ? 'true' : 'false');
+      logSend.hidden = m !== 'send';
+      logRec.hidden = m !== 'rec';
+      idle();
+    }
+
+    function animateLeg(pts, dur, mine) {
+      return new Promise(resolve => {
+        if (dur <= 0) { resolve(); return; }
+        const halo = document.createElementNS(NS, 'circle');
+        halo.setAttribute('r', '11');
+        halo.setAttribute('class', 'halo');
+        const dot = document.createElementNS(NS, 'circle');
+        dot.setAttribute('r', '5');
+        dot.setAttribute('class', 'vfdot');
+        for (const c of [halo, dot]) {
+          c.setAttribute('cx', pts[0][0]);
+          c.setAttribute('cy', pts[0][1]);
+          svg.appendChild(c);
+        }
+        const segs = [];
+        let total = 0;
+        for (let i = 1; i < pts.length; i++) {
+          const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+          segs.push({ a: pts[i - 1], b: pts[i], d });
+          total += d;
+        }
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(guard);
+          dot.remove();
+          halo.remove();
+          resolve();
+        };
+        // 탭이 뒤로 가면 rAF 가 멈추므로 타이머로 반드시 끝나게 한다
+        const guard = setTimeout(finish, dur + 600);
+        const t0 = performance.now();
+        function frame(t) {
+          if (settled) return;
+          if (mine !== runId) { finish(); return; }
+          const p = Math.min(1, (t - t0) / dur);
+          let want = p * total, acc = 0;
+          let x = pts[pts.length - 1][0], y = pts[pts.length - 1][1];
+          for (const sg of segs) {
+            if (want <= acc + sg.d) {
+              const k = sg.d === 0 ? 0 : (want - acc) / sg.d;
+              x = sg.a[0] + (sg.b[0] - sg.a[0]) * k;
+              y = sg.a[1] + (sg.b[1] - sg.a[1]) * k;
+              break;
+            }
+            acc += sg.d;
+          }
+          dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+          halo.setAttribute('cx', x); halo.setAttribute('cy', y);
+          if (p < 1) requestAnimationFrame(frame); else finish();
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    const wait = (ms, mine) => new Promise(r => setTimeout(r, mine === runId ? ms : 0));
+
+    async function play() {
+      const mine = ++runId;
+      idle();
+      const list = stages();
+      const items = logItems();
+      // 단계 설명이 길어 v1 보다 천천히 간다. 점이 닿은 뒤 오른쪽 설명을 읽을 시간을 준다.
+      const dur = still.matches ? 0 : 700;
+      const hold = 700;
+      const shown = '"9회 역전 갑니다"';
+      if (mode === 'send') msgA.textContent = shown;
+
+      for (let i = 0; i < list.length; i++) {
+        if (mine !== runId) return;
+        const st = list[i];
+        if (st.before) st.before();
+        svg.querySelectorAll('.node.on').forEach(n => { n.classList.remove('on'); n.classList.add('done'); });
+        st.nodes.forEach(id => svg.querySelector('#' + id).classList.add('on'));
+        st.wires.forEach(id => svg.querySelector('#' + id).classList.add('lit'));
+        items[i].classList.add('on');
+        prog.textContent = (i + 1) + ' / ' + list.length;
+        if (st.legs.length) await Promise.all(st.legs.map(l => animateLeg(l, dur, mine)));
+        else if (dur) await wait(dur, mine);
+        if (mine !== runId) return;
+        if (st.after) st.after(shown);
+        if (dur) await wait(hold, mine);
+      }
+      if (mine !== runId) return;
+      // 끝나면 강조를 내린다 — 남는 것은 진행 표시와 도착한 메시지뿐이다
+      svg.querySelectorAll('.node').forEach(n => n.classList.remove('on', 'done'));
+      svg.querySelectorAll('.wire').forEach(w => w.classList.remove('lit'));
+      ROOT.querySelectorAll('.stagelog li').forEach(li => li.classList.remove('on'));
+    }
+
+    modeSend.addEventListener('click', () => setMode('send'));
+    modeRec.addEventListener('click', () => setMode('rec'));
+    runBtn.addEventListener('click', play);
+
+    setMode('send');
+
     document.addEventListener('vf:tabshown', e => {
       if (e.detail && e.detail.panel === 'p-chat') { runId++; idle(); }
     });
