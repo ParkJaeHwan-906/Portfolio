@@ -3175,27 +3175,28 @@
       </div>
     </div>
 
-    <h4 class="sec">v1 에서 무엇이 문제였고, 그래서 어떻게 바꿨나</h4>
+    <h4 class="sec">기획이 어떻게 바뀌었고, 그래서 무엇을 골랐나</h4>
 
     <div class="col">
-      <p class="lede">v1 은 응원 구단별 방에 메시지를 <strong>영구 저장</strong>하고 Redis pub/sub 으로 파드 사이를
-        중계했습니다. 운영하면서 드러난 문제를 하나씩 짚고, 각각에 대해 바꾼 것을 짝지었습니다.</p>
+      <p class="lede">v1 은 응원 구단별로 늘 열려 있는 방이었습니다. v2 에서 기획이 <strong>그날 경기를 함께 보는
+        사람들의 하루짜리 방</strong>으로 바뀌었습니다. 방은 경기마다 매일 새로 열리고, 응원 팀과 상관없이 누구나
+        들어오며, 다음 자정이 지나면 대화가 남지 않습니다. 이 기획에서 나온 요구와 각각에 맞춰 고른 설계를 짝지었습니다.</p>
     </div>
 
     <div class="tw">
       <table>
         <thead>
-          <tr><th>영역</th><th>v1 의 문제</th><th>그래서 v2 에서는</th></tr>
+          <tr><th>영역</th><th>바뀐 기획이 요구하는 것</th><th>그래서 v2 에서는</th></tr>
         </thead>
         <tbody>
-          <tr><td>저장</td><td>하루만 지나면 다시 읽히지 않는 메시지가 MySQL 에 계속 쌓였습니다. 같은 EC2 의 Redis 와 메모리를 다퉜고, 탈퇴자 메시지를 옮기는 이관 로직까지 필요했습니다.</td><td><strong>RDB 저장을 없앴습니다.</strong> 원문은 Kafka 에 48시간, 조회용 사본은 Redis Stream 에 하루만 둡니다. 방 키 TTL 로 자정에 함께 사라져 이관도 필요 없습니다.</td></tr>
-          <tr><td>유실</td><td>pub/sub 은 보내고 끝입니다. SSE 가 끊긴 사이(30분 타임아웃·파드 재시작·네트워크) 들어온 메시지는 그대로 사라졌습니다.</td><td><strong>Kafka 로그 + Stream 사본으로 복구합니다.</strong> 재접속 때 Last-Event-ID 이후를 Stream 에서 먼저 채운 뒤 실시간에 합류시킵니다.</td></tr>
-          <tr><td>쓰기 경로</td><td>저장 후 발행이라 쓰기가 두 곳이었습니다. 커밋 뒤 발행이 실패하면 저장은 됐는데 아무도 못 받은 메시지가 남았습니다.</td><td><strong>쓰기 지점을 Kafka 하나로 모았습니다.</strong> 전달과 히스토리 저장은 그 로그를 읽는 소비자가 각자 맡아, 둘 중 하나만 성공하는 상태가 생기지 않습니다.</td></tr>
-          <tr><td>중복</td><td>응답을 못 받은 클라이언트가 재시도하면 같은 메시지가 두 번 저장·전달됐습니다.</td><td><strong>메시지마다 clientMsgId 를 받아 멱등 키로 씁니다.</strong> 같은 키가 다시 오면 처음과 같은 202 와 msgId 를 돌려줍니다.</td></tr>
-          <tr><td>팬아웃</td><td>메시지 1건이 SSE 이벤트 1개였습니다. 한 방이 과열되면 소켓 쓰기가 "메시지 수 × 접속자 수"로 늘어납니다.</td><td><strong>150ms 마다 묶어 보냅니다.</strong> 접속당 쓰기가 메시지율과 무관하게 초당 7회 이하로 고정됩니다.</td></tr>
-          <tr><td>히스토리</td><td>오프셋 페이징이라 새 메시지가 들어오면 다음 페이지가 밀려 중복·누락이 생겼습니다.</td><td><strong>msgId 커서 페이징으로 바꿨습니다.</strong> Stream 의 ID 범위 조회라 페이지가 밀리지 않습니다.</td></tr>
-          <tr><td>방 단위</td><td>구단별 고정 방이라 경기와 상관없는 대화가 섞이고, 같은 경기를 보는 상대 팀 팬과는 이야기할 수 없었습니다.</td><td><strong>오늘 경기 단위로 방을 엽니다.</strong> 00:00 KST 에 그날 경기로 방을 만들고 로그인 사용자 누구나 들어옵니다.</td></tr>
-          <tr><td>배포 단위</td><td>퀴즈 앱 안에 있어 장시간 SSE 연결이 퀴즈 요청과 같은 파드 자원을 나눠 썼습니다.</td><td><strong>전용 chat-app 으로 분리했습니다.</strong> API · 게이트웨이 · history-writer 를 역할 플래그로 나눠, 나중에 접속 수 기준으로 게이트웨이만 늘릴 수 있습니다.</td></tr>
+          <tr><td>방 단위</td><td>같은 경기를 보는 양 팀 팬이 한 방에서 이야기합니다. 방은 경기마다 그날 하루만 존재합니다.</td><td><strong>오늘 경기 단위로 방을 엽니다.</strong> 00:00 KST 에 그날 경기로 방을 만들고 로그인 사용자 누구나 들어옵니다.</td></tr>
+          <tr><td>저장</td><td>대화는 다음 자정에 사라집니다. 영구 저장소가 필요 없고, 탈퇴자 메시지를 옮겨 둘 이유도 없습니다.</td><td><strong>RDB 에 저장하지 않습니다.</strong> 원문은 Kafka 에 48시간, 조회용 사본은 Redis Stream 에 하루만 둡니다. 방 키 TTL 로 자정에 함께 사라져 이관 로직도 필요 없습니다.</td></tr>
+          <tr><td>쓰기 경로</td><td>DB 가 빠지면 전달과 히스토리가 같은 원본에서 나와야 둘이 어긋나지 않습니다.</td><td><strong>쓰기 지점을 Kafka 하나로 둡니다.</strong> 전달과 히스토리 저장은 그 로그를 읽는 소비자가 각자 맡아, 둘 중 하나만 성공하는 상태가 생기지 않습니다.</td></tr>
+          <tr><td>끊긴 구간</td><td>경기 중 대화는 그 순간의 장면을 두고 오갑니다. SSE 가 끊긴 사이(30분 타임아웃·파드 재시작·네트워크) 들어온 메시지를 이어서 돌려줘야 합니다.</td><td><strong>Kafka 로그 + Stream 사본으로 복구합니다.</strong> 재접속 때 Last-Event-ID 이후를 Stream 에서 먼저 채운 뒤 실시간에 합류시킵니다.</td></tr>
+          <tr><td>중복</td><td>전송은 Kafka 적재만 확인하고 바로 답합니다. 응답을 못 받은 클라이언트가 재시도해도 같은 메시지가 두 번 생기면 안 됩니다.</td><td><strong>메시지마다 clientMsgId 를 받아 멱등 키로 씁니다.</strong> 같은 키가 다시 오면 처음과 같은 202 와 msgId 를 돌려줍니다.</td></tr>
+          <tr><td>팬아웃</td><td>두 팀 팬이 한 방에 모이고 대화가 경기 시간에 몰립니다. 소켓 쓰기가 "메시지 수 × 접속자 수"로 늘어나지 않아야 합니다.</td><td><strong>150ms 마다 묶어 보냅니다.</strong> 접속당 쓰기가 메시지율과 무관하게 초당 7회 이하로 고정됩니다.</td></tr>
+          <tr><td>히스토리</td><td>경기 중에는 메시지가 빠르게 쌓입니다. 위로 스크롤하는 동안 새 메시지가 들어와도 페이지가 밀리지 않아야 합니다.</td><td><strong>msgId 커서 페이징을 씁니다.</strong> Stream 의 ID 범위 조회라 페이지가 밀리지 않습니다.</td></tr>
+          <tr><td>배포 단위</td><td>채팅은 경기 시간에 맞춰 퀴즈와 다르게 붐빕니다. 장시간 SSE 연결이 퀴즈 요청과 같은 파드 자원을 나눠 쓰지 않아야 합니다.</td><td><strong>전용 chat-app 으로 분리했습니다.</strong> API · 게이트웨이 · history-writer 를 역할 플래그로 나눠, 나중에 접속 수 기준으로 게이트웨이만 늘릴 수 있습니다.</td></tr>
         </tbody>
       </table>
     </div>
@@ -3221,7 +3222,7 @@
         <h5>전달 경로 <span id="c2-progress">0 / 8</span></h5>
         <div class="fig-scroll">
           <svg id="c2-svg" viewBox="0 -8 770 438" role="img"
-               aria-label="사용자 A의 메시지가 CloudFront와 ALB를 지나 chat API 파드에 도착해 Redis 멱등 키를 확인하고 Kafka에 적재된 뒤 202로 응답한다. Kafka를 읽는 게이트웨이 파드 두 개가 각자 들고 있는 SSE 연결로 사용자 B와 C에게 전달하고, history-writer는 같은 로그를 Redis Stream에 옮겨 적는다.">
+               aria-label="사용자 A의 메시지가 CloudFront와 ALB를 지나 chat API 파드에 도착해 Redis 에서 중복 전송인지 확인하고 Kafka에 적재된 뒤 접수 완료로 응답한다. Kafka를 읽는 게이트웨이 파드 두 개가 각자 들고 있는 SSE 연결로 사용자 B와 C에게 전달하고, history-writer는 같은 로그를 Redis Stream에 옮겨 적는다.">
             <defs>
               <marker id="cm2" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto">
                 <polygon points="0,0 10,4 0,8" fill="currentColor"/></marker>
@@ -3245,76 +3246,76 @@
             <polyline class="wire" id="c2wr" points="740,290 756,290 756,12 475,12 475,22" marker-end="url(#cm2)"/>
 
             <text class="wlabel" x="124" y="122" text-anchor="middle">POST</text>
-            <text class="wlabel" x="434" y="100" text-anchor="end">SET NX</text>
-            <text class="wlabel" x="545" y="113" text-anchor="middle">produce</text>
-            <text class="wlabel" x="230" y="240" text-anchor="middle">202 + msgId (= offset)</text>
-            <text class="wlabel" x="530" y="246" text-anchor="middle">assign()</text>
-            <text class="wlabel" x="716" y="100">group</text>
-            <text class="wlabel" x="586" y="40" text-anchor="middle">XADD</text>
-            <text class="wlabel" x="748" y="9" text-anchor="end">재접속 시 XRANGE (lastId +</text>
-            <text class="wlabel" x="463" y="344">SSE · 150ms 배칭</text>
-            <text class="wlabel" x="668" y="344">SSE · 150ms 배칭</text>
+            <text class="wlabel" x="434" y="100" text-anchor="end">중복 확인</text>
+            <text class="wlabel" x="545" y="113" text-anchor="middle">기록</text>
+            <text class="wlabel" x="230" y="240" text-anchor="middle">접수 완료 응답</text>
+            <text class="wlabel" x="530" y="246" text-anchor="middle">읽기</text>
+            <text class="wlabel" x="716" y="100">읽기</text>
+            <text class="wlabel" x="586" y="40" text-anchor="middle">사본 저장</text>
+            <text class="wlabel" x="748" y="9" text-anchor="end">재접속 시 놓친 메시지 조회</text>
+            <text class="wlabel" x="463" y="344">0.15초씩 묶어 전달</text>
+            <text class="wlabel" x="668" y="344">0.15초씩 묶어 전달</text>
 
             <g class="node" id="c2-a">
               <rect x="12" y="134" width="100" height="66" rx="3"/>
               <text class="ntitle" x="24" y="156">사용자 A</text>
-              <text class="nsub" x="24" y="172">clientMsgId</text>
+              <text class="nsub" x="24" y="172">보내는 사람</text>
               <text class="msg" id="c2-msg-a" x="24" y="190"></text>
             </g>
 
             <g class="node" id="c2-cf">
               <rect x="136" y="126" width="108" height="70" rx="3"/>
               <text class="ntitle" x="148" y="150">CloudFront</text>
-              <text class="nsub" x="148" y="167">/chat/* 캐시 끔</text>
-              <text class="nsub" x="148" y="182">압축 없음</text>
+              <text class="nsub" x="148" y="167">채팅은 캐시 끔</text>
+              <text class="nsub" x="148" y="182">그대로 통과</text>
             </g>
 
             <g class="node" id="c2-alb">
               <rect x="272" y="134" width="82" height="54" rx="3"/>
               <text class="ntitle" x="284" y="156">ALB</text>
-              <text class="nsub" x="284" y="172">파드 선택</text>
+              <text class="nsub" x="284" y="172">아무 파드로</text>
             </g>
 
             <g class="node" id="c2-redis">
               <rect x="380" y="22" width="180" height="56" rx="3"/>
               <text class="ntitle" x="392" y="44">Redis</text>
-              <text class="nsub" x="392" y="62">멱등 키 · 방별 Stream</text>
+              <text class="nsub" x="392" y="62">중복 확인 · 대화 사본</text>
             </g>
 
             <g class="node" id="c2-writer">
               <rect x="612" y="22" width="134" height="56" rx="3"/>
               <text class="ntitle" x="624" y="44">history-writer</text>
-              <text class="nsub" x="624" y="62">조회용 사본 작성</text>
+              <text class="nsub" x="624" y="62">대화 사본 작성</text>
             </g>
 
             <g class="node" id="c2-api">
               <rect x="380" y="120" width="150" height="80" rx="3"/>
               <text class="ntitle" x="392" y="142">chat · API</text>
-              <text class="nsub" x="392" y="159">검증 · * 마스킹</text>
-              <text class="nsub" x="392" y="174">속도 제한 · 멱등 키</text>
-              <text class="nsub" x="392" y="189">DB 쓰기 없음</text>
+              <text class="nsub" x="392" y="159">검사 · 욕설 가림</text>
+              <text class="nsub" x="392" y="174">중복 전송 확인</text>
+              <text class="nsub" x="392" y="189">Kafka 에만 기록</text>
             </g>
 
             <g class="node" id="c2-kafka">
               <rect x="560" y="120" width="186" height="80" rx="3"/>
               <text class="ntitle" x="572" y="142">Kafka — chat-messages</text>
-              <text class="nsub" x="572" y="159">전용 EC2 · KRaft · 48h 보존</text>
-              <text class="nsub" x="572" y="174">key = gameId</text>
-              <text class="nsub" x="572" y="189">유일한 쓰기 지점</text>
+              <text class="nsub" x="572" y="159">메시지 원본 · 48시간 보관</text>
+              <text class="nsub" x="572" y="174">경기별로 순서 유지</text>
+              <text class="nsub" x="572" y="189">모든 메시지가 먼저 여기로</text>
             </g>
 
             <g class="node" id="c2-gw1">
               <rect x="380" y="250" width="150" height="68" rx="3"/>
               <text class="ntitle" x="392" y="272">게이트웨이 파드 1</text>
-              <text class="nsub" x="392" y="289">전송은 못 봤습니다</text>
-              <text class="nsub" x="392" y="304">구독: 사용자 C</text>
+              <text class="nsub" x="392" y="289">Kafka 에서 읽어 전달</text>
+              <text class="nsub" x="392" y="304">사용자 C 와 연결됨</text>
             </g>
 
             <g class="node" id="c2-gw2">
               <rect x="560" y="250" width="180" height="68" rx="3"/>
               <text class="ntitle" x="572" y="272">게이트웨이 파드 2</text>
-              <text class="nsub" x="572" y="289">그룹 없음 · 리밸런스 없음</text>
-              <text class="nsub" x="572" y="304">구독: 사용자 B</text>
+              <text class="nsub" x="572" y="289">Kafka 에서 읽어 전달</text>
+              <text class="nsub" x="572" y="304">사용자 B 와 연결됨</text>
             </g>
 
             <g class="node" id="c2-c">
@@ -3354,22 +3355,18 @@
       </div>
     </div>
 
-    <h4 class="sec">요청 경로에서 하는 일 — 순서가 핵심입니다</h4>
+    <h4 class="sec">요청 경로 — 기록은 Kafka 한 곳에만</h4>
 
     <div class="col">
-      <pre class="code"><code>잘못된 순서:  전송 → Redis 저장 → Kafka 적재 → 분산
-맞는 순서:    전송 → Redis 멱등 키 → Kafka 적재 → 202 응답
-                                        ├→ 게이트웨이 소비 → SSE 분산
-                                        └→ history-writer 소비 → Redis Stream 저장</code></pre>
-      <p><strong>이중 쓰기를 없앴습니다.</strong> 요청 경로에서 Redis 와 Kafka 에 둘 다 쓰면 하나만 성공하는
-        경우가 생깁니다. Redis 에만 있으면 아무도 못 받은 메시지가 히스토리에 보이고, 반대면 받았는데
-        히스토리에 없는 메시지가 됩니다. 쓰기 지점을 Kafka 하나로 두고 Stream 을 그 로그의 소비자로
-        만들면 이 불일치가 구조적으로 생기지 않습니다.</p>
-      <p><strong>msgId 는 Kafka offset 입니다.</strong> 처음에는 Redis INCR 로 방별 번호를 발급하려 했습니다.
-        그런데 파드 A 가 10번, 파드 B 가 11번을 받고 B 가 Kafka 에 먼저 닿으면 history-writer 가 11 을 쓴
-        뒤 10 을 쓰려다 Stream 에 거부당합니다. 한 방은 한 파티션에 들어가고 파티션 offset 은 도착
-        순서대로 커지므로, offset 을 번호로 쓰면 이 역전이 원천적으로 없습니다. 이 번호 하나가 SSE
-        이벤트 id, 히스토리 커서, Last-Event-ID, 신고 대상을 모두 가리킵니다.</p>
+      <pre class="code"><code>요청:  전송 → 중복 확인 → Kafka 에 기록 → 접수 응답
+이후:  Kafka → 게이트웨이 → 접속자에게 전달
+       Kafka → history-writer → 대화 사본 저장</code></pre>
+      <ul class="plain">
+        <li><strong>한 곳에만 기록합니다.</strong> Redis 와 Kafka 에 따로 쓰면 한쪽만 성공할 수 있습니다.
+          Kafka 에만 쓰고 나머지는 거기서 읽어 가므로 둘이 어긋나지 않습니다.</li>
+        <li><strong>메시지 번호는 Kafka 순번입니다.</strong> 같은 방의 메시지는 도착 순서대로 번호가 붙어
+          순서가 뒤집히지 않습니다. 이 번호 하나로 전달 · 스크롤 · 재접속 복구 · 신고를 모두 처리합니다.</li>
+      </ul>
     </div>
 
     <h4 class="sec">기술 선택 이유</h4>
@@ -3394,9 +3391,9 @@
 
     <div class="col">
       <ul class="plain">
-        <li><strong>RDB 에서 뺀 이유.</strong> 경기 채팅은 하루가 지나면 다시 읽히지 않습니다. 그런데도 MySQL 에
-          쌓이고, 같은 EC2 의 Redis 와 메모리를 다퉜습니다. 저장을 빼면서 탈퇴 시 메시지를 (알수없음)
-          계정으로 옮기던 이관 로직도 함께 사라졌습니다.</li>
+        <li><strong>RDB 에 두지 않은 이유.</strong> 기획상 경기 채팅은 다음 자정에 사라집니다. 하루 뒤 버릴
+          데이터를 영구 저장소에 쌓을 이유가 없고, 같은 EC2 에서 Redis 와 메모리를 나눠 쓰는 MySQL 의 부담도
+          늘리지 않습니다. 탈퇴 시 메시지를 (알수없음) 계정으로 옮기는 이관 로직도 필요 없어졌습니다.</li>
         <li><strong>Kafka 를 고른 이유.</strong> 쓰기 경로와 읽기 경로가 갈라지고, 202 를 돌려준 메시지를 잃지
           않으며, offset 으로 재생할 수 있습니다. 히스토리 저장이 밀려도 전달은 늦어지지 않습니다.</li>
         <li><strong>Redis Stream 을 함께 둔 이유.</strong> Kafka 는 진실이 되는 로그이지 조회 저장소가 아닙니다.
@@ -3435,45 +3432,6 @@
       </table>
     </div>
 
-    <h4 class="sec">엔드포인트</h4>
-
-    <div class="tw">
-      <table>
-        <caption>모두 JWT 인증을 거칩니다. 전환 기간 동안 v1 의 /rt/chat 과 함께 운영합니다.</caption>
-        <thead>
-          <tr><th>메서드</th><th>경로</th><th>역할</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="mono">GET</td><td class="mono">/chat/rooms</td><td>오늘 경기 방 목록</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/chat/rooms/{gameId}</td><td>방 상세</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/chat/rooms/{gameId}/subscribe</td><td>SSE 구독 — <code>messages</code> · <code>deleted</code> · <code>reset</code></td></tr>
-          <tr><td class="mono">DELETE</td><td class="mono">/chat/rooms/{gameId}/subscribe</td><td>명시적 퇴장</td></tr>
-          <tr><td class="mono">POST</td><td class="mono">/chat/rooms/{gameId}/messages</td><td>전송 — 202 + msgId</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/chat/rooms/{gameId}/messages?cursor=</td><td>히스토리 — 커서 페이징</td></tr>
-          <tr><td class="mono">POST</td><td class="mono">/chat/rooms/{gameId}/messages/{msgId}/report</td><td>신고 — 즉시 블라인드</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h4 class="sec">검증에서 잡은 것</h4>
-
-    <div class="col">
-      <ul class="plain">
-        <li><strong>파티션의 첫 메시지에서 history-writer 가 멈췄습니다.</strong> offset 0 이 Stream ID
-          <code>0-0</code> 이 되는데 Redis 는 이 ID 를 받지 않습니다. 실제 Redis 를 띄운 테스트에서만
-          드러났고, 엔트리 ID 를 <code>{offset}-1</code> 로 바꿔 외부 계약(msgId)은 그대로 두고 고쳤습니다.</li>
-        <li><strong>프론트 폴리필이 보내는 Accept 헤더에서 404 가 500 으로 나갔습니다.</strong>
-          <code>Accept: text/event-stream</code> 만 실린 요청에는 JSON 오류 본문을 쓸 컨버터가 없습니다.
-          구독 경로 전용 처리기에서 응답을 직접 씁니다.</li>
-        <li><strong>구독 응답 헤더가 첫 하트비트까지 15초 늦게 도착했습니다.</strong> 등록 직후
-          <code>:connected</code> 주석 한 줄을 먼저 써서 헤더를 바로 내보냅니다.</li>
-      </ul>
-      <div class="warnbox">
-        <p><strong>파티션 수는 자정 직후에만 바꿉니다.</strong> 방이 다른 파티션으로 옮겨 더 작은 offset 을
-          받으면 그날 그 방의 Stream 적재가 거부됩니다. 방이 매일 새로 만들어지므로 00:00 KST 방 재생성
-          직후가 안전한 시점입니다.</p>
-      </div>
-    </div>
     </div>
 
     <div class="chatver" data-chatver="v1" hidden>
@@ -3614,24 +3572,6 @@
           <li><span class="st">각자 들고 있는 연결로만 push</span><span class="sd">파드 1 은 사용자 C 에게, 파드 2 는 사용자 B 에게 · 전송을 못 본 파드도 전달합니다</span></li>
         </ol>
       </div>
-    </div>
-
-    <h4 class="sec">엔드포인트</h4>
-
-    <div class="tw">
-      <table>
-        <caption>모두 JWT 인증을 거칩니다.</caption>
-        <thead>
-          <tr><th>메서드</th><th>경로</th><th>역할</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="mono">GET</td><td class="mono">/rt/chat/rooms</td><td>구단별 방 목록</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/rt/chat/rooms/{uid}</td><td>방 상세</td></tr>
-          <tr><td class="mono">GET</td><td class="mono">/rt/chat/rooms/{uid}/subscribe</td><td>SSE 구독 — <code>text/event-stream</code></td></tr>
-          <tr><td class="mono">DELETE</td><td class="mono">/rt/chat/rooms/{uid}/subscribe</td><td>명시적 퇴장</td></tr>
-          <tr><td class="mono">POST</td><td class="mono">/rt/chat/rooms/{uid}/messages</td><td>메시지 전송</td></tr>
-        </tbody>
-      </table>
     </div>
 
     <h4 class="sec">연결 유지 값</h4>
@@ -7884,7 +7824,7 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       { nodes: ['c2-api', 'c2-redis'], wires: ['c2w4'], legs: [[[440, 120], [440, 78]]] },
       { nodes: ['c2-api', 'c2-kafka'], wires: ['c2w5'], legs: [[[530, 161], [560, 161]]] },
       { nodes: ['c2-api', 'c2-a'], wires: ['c2w6'], legs: [[[400, 200], [400, 222], [62, 222], [62, 200]]],
-        after() { msgA.textContent = '202 · msgId 41'; } },
+        after() { msgA.textContent = '접수됨 · 41번'; } },
       { nodes: ['c2-kafka', 'c2-gw1', 'c2-gw2', 'c2-writer'], wires: ['c2w7a', 'c2w7b', 'c2w7c'],
         legs: [[[610, 200], [610, 232], [455, 232], [455, 250]], [[680, 200], [680, 250]], [[710, 120], [710, 78]]] },
       { nodes: ['c2-gw1', 'c2-gw2', 'c2-c', 'c2-b', 'c2-writer', 'c2-redis'], wires: ['c2w8a', 'c2w8b', 'c2w8c'],
@@ -7894,12 +7834,12 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
 
     const REC = [
       { nodes: ['c2-b', 'c2-gw2'], wires: ['c2w8b'], legs: [[[660, 358], [660, 318]]],
-        before() { msgB.textContent = 'Last-Event-ID: 38'; } },
+        before() { msgB.textContent = '마지막으로 받은 38번'; } },
       { nodes: ['c2-gw2'], wires: [], legs: [] },
       { nodes: ['c2-gw2', 'c2-redis'], wires: ['c2wr'], legs: [[[740, 290], [756, 290], [756, 12], [475, 12], [475, 22]]] },
       { nodes: ['c2-redis', 'c2-gw2'], wires: ['c2wr'], legs: [[[475, 22], [475, 12], [756, 12], [756, 290], [740, 290]]] },
       { nodes: ['c2-gw2', 'c2-b'], wires: ['c2w8b'], legs: [[[660, 318], [660, 358]]],
-        after() { msgB.textContent = '복구 39·40·41 → 실시간'; } }
+        after() { msgB.textContent = '놓친 39~41번 → 실시간'; } }
     ];
 
     let mode = 'send';
@@ -7993,7 +7933,9 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
       idle();
       const list = stages();
       const items = logItems();
-      const dur = still.matches ? 0 : 520;
+      // 단계 설명이 길어 v1 보다 천천히 간다. 점이 닿은 뒤 오른쪽 설명을 읽을 시간을 준다.
+      const dur = still.matches ? 0 : 700;
+      const hold = 700;
       const shown = '"9회 역전 갑니다"';
       if (mode === 'send') msgA.textContent = shown;
 
@@ -8007,10 +7949,10 @@ salt 는 CI 가 주입 — 코드·저장소에 없습니다</div>
         items[i].classList.add('on');
         prog.textContent = (i + 1) + ' / ' + list.length;
         if (st.legs.length) await Promise.all(st.legs.map(l => animateLeg(l, dur, mine)));
-        else if (dur) await wait(450, mine);
+        else if (dur) await wait(dur, mine);
         if (mine !== runId) return;
         if (st.after) st.after(shown);
-        if (dur) await wait(90, mine);
+        if (dur) await wait(hold, mine);
       }
       if (mine !== runId) return;
       // 끝나면 강조를 내린다 — 남는 것은 진행 표시와 도착한 메시지뿐이다
