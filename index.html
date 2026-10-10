@@ -3398,9 +3398,6 @@
         <li><strong>Redis Stream 을 함께 둔 이유.</strong> Kafka 는 진실이 되는 로그이지 조회 저장소가 아닙니다.
           입장 시 최근 30건, 위로 스크롤, 재접속 복구는 모두 ID 범위 조회라 Stream 이 정확히 맞습니다.
           사본이라 날아가도 Kafka 에서 다시 만들 수 있습니다.</li>
-        <li><strong>MongoDB 가 아닌 이유.</strong> "방 하나 = 문서 하나"는 16MB 상한과 쓰기 경합 때문에
-          안티패턴이고, 결국 메시지당 문서 + 범위 조회가 됩니다. 하루 뒤 버리는 데이터에 풍부한 질의는
-          필요 없습니다.</li>
       </ul>
     </div>
 
@@ -3421,9 +3418,6 @@
           <tr><td>끊긴 구간</td><td>유실</td><td>Last-Event-ID 로 복구 (최대 2,500건)</td></tr>
           <tr><td>히스토리</td><td>오프셋 페이징 <code>?page=</code></td><td>커서 페이징 <code>?cursor=</code> · XREVRANGE</td></tr>
           <tr><td>SSE 이벤트</td><td>메시지 1건 = 이벤트 1개</td><td>150ms 배칭 — 이벤트 하나에 메시지 배열</td></tr>
-          <tr><td>욕설 마스킹</td><td>구단별 치환어</td><td>글자 수만큼 <code>*</code> · 탐지기는 공유 모듈로 분리</td></tr>
-          <tr><td>신고</td><td>DB blind 컬럼</td><td>툼스톤 이벤트 → blind 집합 · 구독자에 deleted</td></tr>
-          <tr><td>배포 단위</td><td>quiz-app 안 (/rt)</td><td>전용 chat-app (/chat) · 역할 플래그로 분리 가능</td></tr>
         </tbody>
       </table>
     </div>
